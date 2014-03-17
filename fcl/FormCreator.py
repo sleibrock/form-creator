@@ -14,6 +14,7 @@ Form Creator app design class
 All functionality of the GUI here
 """
 
+#TODO: Fix the function binding with Event.Skip() for everything
 
 class FormCreator(wx.Frame):
     def __init__(self, parent, title):
@@ -79,9 +80,9 @@ class FormCreator(wx.Frame):
         self.Show(True)
 
         # Bindings
-        self.Bind(wx.EVT_MENU, self.onOpen, openbutton)
+        self.Bind(wx.EVT_MENU_OPEN, self.onOpen, openbutton)
         self.Bind(wx.EVT_MENU, self.onSave, savebutton)
-        self.Bind(wx.EVT_MENU, self.onClose, closebutton)
+        self.Bind(wx.EVT_MENU_CLOSE, self.onClose, closebutton)
         self.Bind(wx.EVT_MENU, self.onAbout, aboutbutton)
         self.Bind(wx.EVT_MENU, self.onExit, exitbutton)
         self.Bind(wx.EVT_MENU, self.onDelete, deletebutton)
@@ -93,7 +94,7 @@ class FormCreator(wx.Frame):
         """
         Open up an image and load it to the canvas
         """
-        event.Skip()
+        print("Opening a file")
         self.dirname = ""
         dlg = wx.FileDialog(self, "Choose a file", self.dirname, "", "*.*", wx.OPEN)
         if dlg.ShowModal() == wx.ID_OK:
@@ -115,14 +116,12 @@ class FormCreator(wx.Frame):
 
     def onApply(self, event):
         """Send text to the canvas to mark rectangles with text"""
-        event.Skip()
         pass
 
     def onSelection(self, event):
         """
         Apply the selection from listbox to the rectangle selected (if any)
         """
-        event.Skip()
         N = self.listitems[self.listbox.GetSelection()]
         if self.v.image is not None:
             self.v.applyType(N)
@@ -133,9 +132,9 @@ class FormCreator(wx.Frame):
         Then write the rectangle data to HTML format
         and also a new readable JSON format (called .RMAP)
         """
+        print("Saving a file")
         # TODO: Make the Save function export an RMAP JSON and copy the original image to destination
         if self.v.image is not None:
-            event.Skip()
             dlg = wx.FileDialog(self, "Choose a name to save the file", "", "", "*.RMAP", wx.SAVE)
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetFilename()
@@ -156,25 +155,20 @@ class FormCreator(wx.Frame):
             self.SetStatusText("RMAP saved to: " + str(join(dirname)))
         else:
             self.SetStatusText("You can't write data without an image!")
-        event.Skip()
 
     def onAbout(self, event):
-        event.Skip()
         dlg = wx.MessageDialog(self, "A short description etc", "About FormCreator", wx.OK)
         dlg.ShowModal()
         dlg.Destroy()
 
     def onExit(self, event):
-        event.Skip()
         self.Close(True)  # close program
 
     def onDelete(self, event):
-        event.Skip()
         if self.v.image is not None:
             self.v.deleteSelectedRect()
 
     def delAll(self, event):
-        event.Skip()
         if self.v.image is not None:
             self.v.deleteAllRects()
 
@@ -185,7 +179,6 @@ class FormCreator(wx.Frame):
         #print("we're typing")
         if self.v.image is not None:
             self.v.applyName(self.idText.Value)
-        event.Skip()
 
     def toggleEditMode(self, event):
         """Turn on editing mode for canvas"""
