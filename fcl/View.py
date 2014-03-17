@@ -9,6 +9,8 @@ import wx
 View data classes and objects
 functionality of drawing and data management here
 """
+
+
 class Rect(object):
     def __init__(self, x, y, w, h):
         self.x, self.y, self.w, self.h = x, y, w, h
@@ -127,7 +129,6 @@ class View(wx.Panel):
         Delete all rects (shouldn't be very useful)
         """
         self.rects = []
-        event.Skip()
 
     def applyType(self, Type):
         if self.selRect is not None:

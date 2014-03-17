@@ -1,16 +1,20 @@
 #!/usr/bin/python
 #-*- coding: utf-8 -*-
+from fcl import View
+
 __author__ = 'Steven'
 
 from os.path import join
 import wx
-from json import dumps, loads
-from View import View, Rect, Preferences
+from View import View, Preferences
+from json import loads, dumps
 
 """
 Form Creator app design class
 All functionality of the GUI here
 """
+
+
 class FormCreator(wx.Frame):
     def __init__(self, parent, title):
         self.W, self.H = 800, 600
@@ -31,7 +35,8 @@ class FormCreator(wx.Frame):
 
         self.listitems = ("text", "radio", "checkbox")
         self.listbox = wx.ListBox(self)
-        for i, I in enumerate(self.listitems): self.listbox.Insert(I, i)
+        for i, I in enumerate(self.listitems):
+            self.listbox.Insert(I, i)
 
         # Bottom panel for text entry here with a horizontal sizer
         panelSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -55,6 +60,7 @@ class FormCreator(wx.Frame):
         # File menu operations and buttons
         fmenu = wx.Menu()
         openbutton = fmenu.Append(wx.ID_OPEN, "Open", "Open up an image")
+        savebutton = fmenu.Append(wx.ID_OPEN, "Save", "Save your work")
         closebutton = fmenu.Append(wx.ID_CLOSE, "Close", "Close an image mapping")
         fmenu.AppendSeparator()
         aboutbutton = fmenu.Append(wx.ID_ABOUT, "&About", "Info on this program")
@@ -68,11 +74,13 @@ class FormCreator(wx.Frame):
         mb.Append(fmenu, "&File")
         mb.Append(emenu, "&Edit")
 
+        # etc
         self.SetMenuBar(mb)
         self.Show(True)
 
         # Bindings
         self.Bind(wx.EVT_MENU, self.onOpen, openbutton)
+        self.Bind(wx.EVT_MENU, self.onSave, savebutton)
         self.Bind(wx.EVT_MENU, self.onClose, closebutton)
         self.Bind(wx.EVT_MENU, self.onAbout, aboutbutton)
         self.Bind(wx.EVT_MENU, self.onExit, exitbutton)
@@ -125,20 +133,27 @@ class FormCreator(wx.Frame):
         Then write the rectangle data to HTML format
         and also a new readable JSON format (called .RMAP)
         """
+        # TODO: Make the Save function export an RMAP JSON and copy the original image to destination
         if self.v.image is not None:
-            rects_to_write = self.v.rects
             event.Skip()
             dlg = wx.FileDialog(self, "Choose a name to save the file", "", "", "*.RMAP", wx.SAVE)
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetFilename()
                 dirname = dlg.GetDirectory()
-                self.v.calcBoundaries()
-                self.SetStatusText("RMAP saved to : " + str(join(dirname)) )
-            dlg.Destroy()
+                dlg.Destroy()
+            else:
+                dirname = ""
+                filename = "imagedata"
 
-            for R in rects_to_write:
-                pass
-            self.SetStatusText("Coming SOON")
+            # build a rectangle dictionary to use in a JSON export
+            RMAPdata = {}
+            for i, R in enumerate(self.v.rects):
+                d = {"x": R.x, "y": R.y, "w": R.w, "h": R.h,
+                     "IDtag": R.IDtag, "typeRect": R.typeRect}
+                RMAPdata["rect"+str(i)] = d
+            with open(join(dirname, filename), "w") as F:
+                F.write(dumps(RMAPdata, sort_keys=True, indent=4, separators=(',', ': ')))
+            self.SetStatusText("RMAP saved to: " + str(join(dirname)))
         else:
             self.SetStatusText("You can't write data without an image!")
         event.Skip()
@@ -167,7 +182,7 @@ class FormCreator(wx.Frame):
         self.listbox.SetStringSelection(text)
 
     def applyName(self, event):
-        print("we're typing")
+        #print("we're typing")
         if self.v.image is not None:
             self.v.applyName(self.idText.Value)
         event.Skip()
@@ -177,9 +192,4 @@ class FormCreator(wx.Frame):
         if self.v.image is not None:
             # invert the state of edit mode
             self.v.editMode = not self.v.editMode
-
-if __name__ == "__main__":
-    app = wx.App(False)
-    FormCreator(None, "FormCreator")
-    app.MainLoop()
-    #end
+#end
