@@ -4,7 +4,9 @@ from fcl import View
 
 __author__ = 'Steven'
 
-from os.path import join
+from os.path import join, isfile, isdir
+from os import mkdir, rename
+from shutil import copy
 import wx
 from View import View, Preferences
 from json import loads, dumps
@@ -30,9 +32,11 @@ class FormCreator(wx.Frame):
 
         # Add the canvas for rectangular mapping
         self.v = View(self)
-        self.idtext = wx.TextCtrl(self)
+        self.idtext = wx.TextCtrl(self, 33)
         self.applybutton = wx.Button(self, -1, " Apply ")
+        self.filename = ""
         self.img = ""
+        self.idtext.SetFocus()
 
         self.listitems = ("text", "radio", "checkbox")
         self.listbox = wx.ListBox(self)
@@ -89,23 +93,26 @@ class FormCreator(wx.Frame):
         self.Bind(wx.EVT_MENU, self.del_all, delallbutton)
         self.Bind(wx.EVT_LISTBOX, self.on_selection, self.listbox)
         self.Bind(wx.EVT_BUTTON, self.apply_name, self.applybutton)
-
-        self.Bind(wx.EVT_KEY_DOWN, self.typing, self.idtext)
+        self.Bind(wx.EVT_TEXT, self.typing, self.idtext)
 
     def typing(self, event):
-        print("Typing: " + str(self.idtext.Value))
+        """
+        Set the text being typed to the rectangle's name
+        """
+        event.Skip()
+        if self.v.image is not None:
+            self.v.applyname(self.idtext.Value)
 
     def on_open(self, event):
         """
         Open up an image and load it to the canvas
         """
-        print("Opening a file" + str(wx.ID_OPEN))
         dirname = ""
         dlg = wx.FileDialog(self, "Choose a file", dirname, "", "*.*", wx.OPEN)
         if dlg.ShowModal() == wx.ID_OK:
-            filename = dlg.GetFilename()
+            self.filename = dlg.GetFilename()
             dirname = dlg.GetDirectory()
-            self.img = join(dirname, filename)
+            self.img = join(dirname, self.filename)
             self.v.image = wx.Bitmap(self.img, type=wx.BITMAP_TYPE_ANY)
             self.v.rects = []
             self.v.Refresh()  # trigger onpaint
@@ -120,14 +127,20 @@ class FormCreator(wx.Frame):
         """
         # TODO: Make the Save function export an RMAP JSON and copy the original image to destination
         if self.v.image is not None:
-            dlg = wx.FileDialog(self, "Choose a name to save the file", "", "", "*.RMAP", wx.SAVE)
+            dlg = wx.FileDialog(self, "Choose a name to save the file", "", "", ".rmap", wx.SAVE)
             if dlg.ShowModal() == wx.ID_OK:
-                filename = dlg.GetFilename()
+                filename = dlg.GetFilename().replace(".rmap", "")
                 dirname = dlg.GetDirectory()
                 dlg.Destroy()
             else:
                 dirname = ""
                 filename = "imagedata"
+
+            # make a directory with the filename
+            newdir = join(dirname, filename)
+            mkdir(newdir)
+            print(filename)
+            print(newdir)
 
             # build a rectangle dictionary to use in a JSON export
             rmap_data = {}
@@ -135,9 +148,26 @@ class FormCreator(wx.Frame):
                 d = {"x": r.x, "y": r.y, "w": r.w, "h": r.h,
                      "IDtag": r.idtag, "typeRect": r.typerect}
                 rmap_data["rect"+str(i)] = d
-            with open(join(dirname, filename), "w") as F:
+
+            # Copy the original image
+            copy(self.img, join(newdir, self.filename))
+            fname = self.filename.split(".")
+            new_fname = ".".join([filename, fname.pop()])
+            rename(join(newdir, self.filename), new_fname)
+
+            # dump the RMAP data
+            with open(join(newdir, filename)+".rmap", "w") as F:
                 F.write(dumps(rmap_data, sort_keys=True, indent=4, separators=(',', ': ')))
-            self.SetStatusText("RMAP saved to: " + str(join(dirname)))
+
+            # export HTML/CSS data to a new HTML file
+            # TODO: finally create the HTML code exporter
+            with open("skeleton.html", "r") as f:
+                skeletal_data = f.read()
+
+            with open(".".join([filename, "html"])) as f:
+                f.write(skeletal_data.format("Hello", "World", "Yo"))
+
+            self.SetStatusText("RMAP data saved to: " + str(join(dirname, new_fname)))
         else:
             self.SetStatusText("You can't write data without an image!")
 
@@ -147,18 +177,13 @@ class FormCreator(wx.Frame):
         self.v.editmode = False
         self.v.rects = []
 
-    def on_apply(self, event):
-        """Send text to the canvas to mark rectangles with text"""
-        pass
-
     def on_selection(self, event):
         """
         Apply the selection from listbox to the rectangle selected (if any)
         """
-        N = self.listitems[self.listbox.GetSelection()]
+        n = self.listitems[self.listbox.GetSelection()]
         if self.v.image is not None:
-            self.v.applytype(N)
-
+            self.v.applytype(n)
 
     def on_about(self, event):
         dlg = wx.MessageDialog(self, "A short description etc", "About FormCreator", wx.OK)
@@ -181,7 +206,6 @@ class FormCreator(wx.Frame):
         self.listbox.SetStringSelection(text)
 
     def apply_name(self, event):
-        #print("we're typing")
         if self.v.image is not None:
             self.v.applyname(self.idtext.Value)
 

@@ -71,6 +71,7 @@ class View(wx.Panel):
     def on_size(self, event):
         """Refresh info when app size changes"""
         self.Refresh()
+        event.Skip()
 
     @staticmethod
     def createrect(init_click, end_click):
@@ -80,7 +81,7 @@ class View(wx.Panel):
         w, h = end_click[0] - x, end_click[1] - y
         """
         x, y = init_click[0], init_click[1]
-        w, h = end_click[0] - x, end_click[1] - y
+        w, h = abs(end_click[0] - x), abs(end_click[1] - y)
         return tuple((x, y, w, h))
 
     def colliderectpos(self, pos):
@@ -104,9 +105,8 @@ class View(wx.Panel):
             x2, y2, w2, h2 = R.__iter__()[:4]
             x2 += self.offsetx
             y2 += self.offsety
-            if any([x1 >= x2, x1 + w1 <= x2 + w2]):
-                if any([y1 >= y2, y1 + h1 <= y2 + h2]):
-                    return True
+            if all([x1 < x2 + w2,  x1+w1 > x2, y1 < y2+h2, y1+h1 > y2]):
+                return True
         return False
 
     def deleteselectedrect(self):
@@ -169,6 +169,7 @@ class View(wx.Panel):
             event.Skip()
 
     def leftdown(self, event):
+        # TODO: ensure the mouse positions are in order (otherwise it screws up)
         self.leftclick = True
         pos = event.GetPosition()
         self.leftclick_topleft = pos
@@ -187,12 +188,12 @@ class View(wx.Panel):
         self.Refresh()
 
     def leftup(self, event):
+        """
+        Create a new rectangle, test if it hits anything, append it
+        Subtract the image panning offsets for HTML purposes
+        """
         self.leftclick = False
         if self.displayrect:
-            # TODO: write a check to see if it collides with any other existing rectangles
-            # make a rectangle, append it
-            # We have to subtract the offsets to store the actual information
-            # Then when drawing add the offsets
             x, y = self.leftclick_topleft[0] - self.offsetx, self.leftclick_topleft[1] - self.offsety
             x2, y2 = self.leftclick_botright[0] - self.offsetx, self.leftclick_botright[1] - self.offsety
             R = Rect(*self.createrect((x, y), (x2, y2)))
@@ -223,7 +224,6 @@ class View(wx.Panel):
         dc = wx.AutoBufferedPaintDC(self)
         dc.Clear()
         dc.SetBrush(wx.Brush("000000", style=wx.TRANSPARENT))
-
         if self.image is not None:
             # draw the new bitmap
             dc.DrawBitmap(self.image, self.offsetx, self.offsety)
@@ -233,7 +233,6 @@ class View(wx.Panel):
                 # draw the being-made rectangle
                 dc.SetPen(wx.Pen(Preferences.displayRectangleBorder, 2, style=wx.DOT_DASH))
                 dc.DrawRectangle(*self.createrect(self.leftclick_topleft, self.leftclick_botright))
-
             dc.SetPen(wx.Pen(Preferences.inactiveRectangleBorder, 1, style=wx.SOLID))
             for r in self.rects:
                 dc.DrawRectangle(r.x + self.offsetx, r.y + self.offsety, r.w, r.h)
