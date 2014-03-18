@@ -12,6 +12,9 @@ functionality of drawing and data management here
 
 
 class Rect(object):
+    """
+    Class to store rectangle information
+    """
     def __init__(self, x, y, w, h):
         self.x, self.y, self.w, self.h = x, y, w, h
         self.data = (x, y, w, h)
@@ -19,26 +22,19 @@ class Rect(object):
         self.typerect = "text"  # default
 
     def __iter__(self):
-        return iter((self.x, self.y, self.w, self.h, self.idtag, self.typerect))
-
-    def collide(self, other_rect):
-        """
-        Check if this rect collides against *other_rect
-        """
-
-        return True
-        pass
+        return self.data
 
 class Preferences(object):
     """
     Class to store application preferences
-    Load from JSON format preferrably (if really necessary)
+    Load from JSON format preferrably
     """
     version = "0.1"
     highlightedRectangleBorder = wx.GREEN
     displayRectangleBorder = wx.RED
     inactiveRectangleBorder = wx.BLUE
     noImgText = "Load an image to process"
+
 
 class View(wx.Panel):
     def __init__(self, parent):
@@ -94,23 +90,30 @@ class View(wx.Panel):
         x, y = pos
         for R in self.rects:
             rx, ry, rw, rh = R.x + self.offsetx, R.y + self.offsety, R.w, R.h
-            if all([x >= rx,  x <= rx + rw]):
+            if all([x >= rx, x <= rx + rw]):
                 if all([y >= ry, y <= ry + rh]):
                     return R  # means it clicked a rectangle
         return None  # return none otherwise
 
-    def colliderectrect(self, rect):
+    def colliderects(self, rect):
         """
         Check if *rect collides with any other rect in rect list
         """
-        pass
+        x1, y1, w1, h1 = rect.__iter__()[:4]
+        for R in self.rects:
+            x2, y2, w2, h2 = R.__iter__()[:4]
+            x2 += self.offsetx
+            y2 += self.offsety
+            if any([x1 >= x2, x1 + w1 <= x2 + w2]):
+                if any([y1 >= y2, y1 + h1 <= y2 + h2]):
+                    return True
+        return False
 
     def deleteselectedrect(self):
         """
         Delete currently selected rectangle
         """
         if self.selrect is not None:
-            print(str(self.selrect.data))
             for i, R in enumerate(self.rects):
                 if R.data is self.selrect.data:
                     removal = i
@@ -126,13 +129,13 @@ class View(wx.Panel):
         """
         self.rects = []
 
-    def applytype(self, Type):
+    def applytype(self, type):
         if self.selrect is not None:
-            self.selrect.typerect = Type
+            self.selrect.typerect = type
 
-    def applyname(self, Name):
+    def applyname(self, name):
         if self.selrect is not None:
-            self.selrect.idtag = Name
+            self.selrect.idtag = name
 
     def motion(self, event):
         # The big mouse event determiner
@@ -161,7 +164,9 @@ class View(wx.Panel):
         """
         if event.GetKeyCode() in (wx.WXK_DELETE, wx.WXK_BACK):
             self.deleteselectedrect()
-        event.Skip()
+        else:
+            # Go down the hierarchy
+            event.Skip()
 
     def leftdown(self, event):
         self.leftclick = True
@@ -173,8 +178,8 @@ class View(wx.Panel):
             # grab the rect that was clicked
             self.selrect = r
             self.parent.set_type(r.typerect)
-            self.parent.idText.SetValue(r.idtag)
-            self.parent.idText.SetFocus()
+            self.parent.idtext.SetValue(r.idtag)
+            self.parent.idtext.SetFocus()
         else:
             # draw a new rectangle
             self.selrect = None
@@ -182,7 +187,6 @@ class View(wx.Panel):
         self.Refresh()
 
     def leftup(self, event):
-        event.Skip()
         self.leftclick = False
         if self.displayrect:
             # TODO: write a check to see if it collides with any other existing rectangles
@@ -191,7 +195,9 @@ class View(wx.Panel):
             # Then when drawing add the offsets
             x, y = self.leftclick_topleft[0] - self.offsetx, self.leftclick_topleft[1] - self.offsety
             x2, y2 = self.leftclick_botright[0] - self.offsetx, self.leftclick_botright[1] - self.offsety
-            self.rects.append(Rect(*self.createrect((x, y), (x2, y2))))
+            R = Rect(*self.createrect((x, y), (x2, y2)))
+            if not self.colliderects(R):
+                self.rects.append(R)
             self.displayrect = False
         self.Refresh()
 
@@ -237,7 +243,6 @@ class View(wx.Panel):
                                  self.selrect.w, self.selrect.h)
         else:
             dc.SetPen(wx.Pen(wx.BLACK, 5))
-            n = len(Preferences.noImgText)
-            dc.DrawText(Preferences.noImgText, (w / 2)-n, (h / 2)-n)
-
+            n = len(Preferences.noImgText) * 5
+            dc.DrawText(Preferences.noImgText, (w / 2)-n, (h / 2))
 # end

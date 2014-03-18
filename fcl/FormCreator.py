@@ -14,7 +14,6 @@ Form Creator app design class
 All functionality of the GUI here
 """
 
-#TODO: Fix the function binding with Event.Skip() for everything
 
 class FormCreator(wx.Frame):
     def __init__(self, parent, title):
@@ -90,6 +89,11 @@ class FormCreator(wx.Frame):
         self.Bind(wx.EVT_MENU, self.del_all, delallbutton)
         self.Bind(wx.EVT_LISTBOX, self.on_selection, self.listbox)
         self.Bind(wx.EVT_BUTTON, self.apply_name, self.applybutton)
+
+        self.Bind(wx.EVT_KEY_DOWN, self.typing, self.idtext)
+
+    def typing(self, event):
+        print("Typing: " + str(self.idtext.Value))
 
     def on_open(self, event):
         """
