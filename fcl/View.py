@@ -1,8 +1,6 @@
 #!/usr/bin/python
 #-*- coding: utf-8 -*-
-
 __author__ = 'Steven'
-
 import wx
 
 """
@@ -129,9 +127,9 @@ class View(wx.Panel):
         """
         self.rects = []
 
-    def applytype(self, type):
+    def applytype(self, typerect):
         if self.selrect is not None:
-            self.selrect.typerect = type
+            self.selrect.typerect = typerect
 
     def applyname(self, name):
         if self.selrect is not None:

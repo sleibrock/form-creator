@@ -1,10 +1,8 @@
 #!/usr/bin/python
 #-*- coding: utf-8 -*-
-from fcl import View
-
 __author__ = 'Steven'
 
-from os.path import join, isfile, isdir
+from os.path import join, isfile
 from os import mkdir, rename
 from shutil import copy
 import wx
@@ -107,6 +105,7 @@ class FormCreator(wx.Frame):
         """
         Open up an image and load it to the canvas
         """
+        # TODO: add a way to open up a JSON file and load the rectangle data
         dirname = ""
         dlg = wx.FileDialog(self, "Choose a file", dirname, "", "*.*", wx.OPEN)
         if dlg.ShowModal() == wx.ID_OK:
@@ -133,14 +132,12 @@ class FormCreator(wx.Frame):
                 dirname = dlg.GetDirectory()
                 dlg.Destroy()
             else:
-                dirname = ""
-                filename = "imagedata"
+                self.SetStatusText("Failed to save!")
+                return False
 
             # make a directory with the filename
             newdir = join(dirname, filename)
             mkdir(newdir)
-            print(filename)
-            print(newdir)
 
             # build a rectangle dictionary to use in a JSON export
             rmap_data = {}
@@ -153,19 +150,33 @@ class FormCreator(wx.Frame):
             copy(self.img, join(newdir, self.filename))
             fname = self.filename.split(".")
             new_fname = ".".join([filename, fname.pop()])
-            rename(join(newdir, self.filename), new_fname)
+            rename(join(newdir, self.filename), join(newdir, new_fname))
 
             # dump the RMAP data
             with open(join(newdir, filename)+".rmap", "w") as F:
                 F.write(dumps(rmap_data, sort_keys=True, indent=4, separators=(',', ': ')))
 
             # export HTML/CSS data to a new HTML file
+            # .sourceImage( z-index: -1; }
             # TODO: finally create the HTML code exporter
             with open("skeleton.html", "r") as f:
                 skeletal_data = f.read()
 
-            with open(".".join([filename, "html"])) as f:
-                f.write(skeletal_data.format("Hello", "World", "Yo"))
+            with open(join(newdir, filename)+".html", "w") as f:
+                page_title = new_fname
+                css = ".sourceImage{ z-index: -1; }\n"
+                html = "<img src=\"{0}\" class=\"sourceImage\" />\n".format(new_fname)
+                s = str  # save character space
+
+                for key, r in rmap_data.items():
+                    # append CSS
+                    css += "."+s(key)+"{position:absolute;top:"+s(r["y"])+"px;left:"+s(r["x"])+"px;}\n"
+                    # append HTML
+                    if r["typeRect"] is "text":
+                        html += "<input type=\"text\" class=\"{0}\" size=\"{1}\" />\n".format(key, r["w"]/4)
+                    else:
+                        html += "<input type=\"{0}\" class=\"{1}\" />\n".format(r["typeRect"], key)
+                f.write(skeletal_data.format(page_title, css, html))
 
             self.SetStatusText("RMAP data saved to: " + str(join(dirname, new_fname)))
         else:
