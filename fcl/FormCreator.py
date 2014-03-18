@@ -18,21 +18,22 @@ All functionality of the GUI here
 
 class FormCreator(wx.Frame):
     def __init__(self, parent, title):
-        self.W, self.H = 800, 600
+        self.w, self.h = 800, 600
         wx.Frame.__init__(self, parent, title=title)
 
         # Basic frame information
         self.SetTitle("Form Creator " + Preferences.version)
-        self.SetClientSize((self.W, self.H))
+        self.SetClientSize((self.w, self.h))
         self.Center()
         self.Maximize()
         bp = wx.BoxSizer(orient=wx.VERTICAL)
-        bp.SetMinSize([self.W, self.H])  # set the min size of the window
+        bp.SetMinSize([self.w, self.h])  # set the min size of the window
 
         # Add the canvas for rectangular mapping
         self.v = View(self)
-        self.idText = wx.TextCtrl(self)
-        self.applyButton = wx.Button(self, -1, " Apply ")
+        self.idtext = wx.TextCtrl(self)
+        self.applybutton = wx.Button(self, -1, " Apply ")
+        self.img = ""
 
         self.listitems = ("text", "radio", "checkbox")
         self.listbox = wx.ListBox(self)
@@ -40,16 +41,16 @@ class FormCreator(wx.Frame):
             self.listbox.Insert(I, i)
 
         # Bottom panel for text entry here with a horizontal sizer
-        panelSizer = wx.BoxSizer(wx.HORIZONTAL)
+        panelsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         # Test button creation
-        panelSizer.Add(self.applyButton, 0, wx.EXPAND)
-        panelSizer.Add(self.idText, 1, wx.EXPAND)
-        panelSizer.Add(self.listbox, 2, wx.EXPAND)
+        panelsizer.Add(self.applybutton, 0, wx.EXPAND)
+        panelsizer.Add(self.idtext, 1, wx.EXPAND)
+        panelsizer.Add(self.listbox, 2, wx.EXPAND)
 
         # Start doing sizers
         bp.Add(self.v, 1, wx.EXPAND)
-        bp.Add(panelSizer, 0, wx.BOTTOM | wx.EXPAND)
+        bp.Add(panelsizer, 0, wx.BOTTOM | wx.EXPAND)
         self.SetSizer(bp)
         self.SetAutoLayout(1)
         bp.Fit(self)
@@ -61,7 +62,7 @@ class FormCreator(wx.Frame):
         # File menu operations and buttons
         fmenu = wx.Menu()
         openbutton = fmenu.Append(wx.ID_OPEN, "Open", "Open up an image")
-        savebutton = fmenu.Append(wx.ID_OPEN, "Save", "Save your work")
+        savebutton = fmenu.Append(wx.ID_SAVE, "Save", "Save your work")
         closebutton = fmenu.Append(wx.ID_CLOSE, "Close", "Close an image mapping")
         fmenu.AppendSeparator()
         aboutbutton = fmenu.Append(wx.ID_ABOUT, "&About", "Info on this program")
@@ -80,59 +81,39 @@ class FormCreator(wx.Frame):
         self.Show(True)
 
         # Bindings
-        self.Bind(wx.EVT_MENU_OPEN, self.onOpen, openbutton)
-        self.Bind(wx.EVT_MENU, self.onSave, savebutton)
-        self.Bind(wx.EVT_MENU_CLOSE, self.onClose, closebutton)
-        self.Bind(wx.EVT_MENU, self.onAbout, aboutbutton)
-        self.Bind(wx.EVT_MENU, self.onExit, exitbutton)
-        self.Bind(wx.EVT_MENU, self.onDelete, deletebutton)
-        self.Bind(wx.EVT_MENU, self.delAll, delallbutton)
-        self.Bind(wx.EVT_LISTBOX, self.onSelection, self.listbox)
-        self.Bind(wx.EVT_BUTTON, self.applyName, self.applyButton)
+        self.Bind(wx.EVT_MENU, self.on_open, openbutton)
+        self.Bind(wx.EVT_MENU, self.on_save, savebutton)
+        self.Bind(wx.EVT_MENU, self.on_close, closebutton)
+        self.Bind(wx.EVT_MENU, self.on_about, aboutbutton)
+        self.Bind(wx.EVT_MENU, self.on_exit, exitbutton)
+        self.Bind(wx.EVT_MENU, self.on_delete, deletebutton)
+        self.Bind(wx.EVT_MENU, self.del_all, delallbutton)
+        self.Bind(wx.EVT_LISTBOX, self.on_selection, self.listbox)
+        self.Bind(wx.EVT_BUTTON, self.apply_name, self.applybutton)
 
-    def onOpen(self, event):
+    def on_open(self, event):
         """
         Open up an image and load it to the canvas
         """
-        print("Opening a file")
-        self.dirname = ""
-        dlg = wx.FileDialog(self, "Choose a file", self.dirname, "", "*.*", wx.OPEN)
+        print("Opening a file" + str(wx.ID_OPEN))
+        dirname = ""
+        dlg = wx.FileDialog(self, "Choose a file", dirname, "", "*.*", wx.OPEN)
         if dlg.ShowModal() == wx.ID_OK:
-            self.filename = dlg.GetFilename()
-            self.dirname = dlg.GetDirectory()
-            self.img = join(self.dirname, self.filename)
+            filename = dlg.GetFilename()
+            dirname = dlg.GetDirectory()
+            self.img = join(dirname, filename)
             self.v.image = wx.Bitmap(self.img, type=wx.BITMAP_TYPE_ANY)
             self.v.rects = []
-            self.v.Refresh()  # trigger onPaint
-            self.v.calcBoundaries()
+            self.v.Refresh()  # trigger onpaint
             self.SetTitle("Form Creator : " + self.img)
         dlg.Destroy()
 
-    def onClose(self, event):
-        event.Skip()
-        self.v.image = None
-        self.v.editMode = False
-        self.v.rects = []
-
-    def onApply(self, event):
-        """Send text to the canvas to mark rectangles with text"""
-        pass
-
-    def onSelection(self, event):
-        """
-        Apply the selection from listbox to the rectangle selected (if any)
-        """
-        N = self.listitems[self.listbox.GetSelection()]
-        if self.v.image is not None:
-            self.v.applyType(N)
-
-    def onSave(self, event):
+    def on_save(self, event):
         """
         Copy the image from SRC to the destination directory + folder
         Then write the rectangle data to HTML format
         and also a new readable JSON format (called .RMAP)
         """
-        print("Saving a file")
         # TODO: Make the Save function export an RMAP JSON and copy the original image to destination
         if self.v.image is not None:
             dlg = wx.FileDialog(self, "Choose a name to save the file", "", "", "*.RMAP", wx.SAVE)
@@ -145,44 +126,64 @@ class FormCreator(wx.Frame):
                 filename = "imagedata"
 
             # build a rectangle dictionary to use in a JSON export
-            RMAPdata = {}
-            for i, R in enumerate(self.v.rects):
-                d = {"x": R.x, "y": R.y, "w": R.w, "h": R.h,
-                     "IDtag": R.IDtag, "typeRect": R.typeRect}
-                RMAPdata["rect"+str(i)] = d
+            rmap_data = {}
+            for i, r in enumerate(self.v.rects):
+                d = {"x": r.x, "y": r.y, "w": r.w, "h": r.h,
+                     "IDtag": r.idtag, "typeRect": r.typerect}
+                rmap_data["rect"+str(i)] = d
             with open(join(dirname, filename), "w") as F:
-                F.write(dumps(RMAPdata, sort_keys=True, indent=4, separators=(',', ': ')))
+                F.write(dumps(rmap_data, sort_keys=True, indent=4, separators=(',', ': ')))
             self.SetStatusText("RMAP saved to: " + str(join(dirname)))
         else:
             self.SetStatusText("You can't write data without an image!")
 
-    def onAbout(self, event):
+    def on_close(self, event):
+        self.img = ""
+        self.v.image = None
+        self.v.editmode = False
+        self.v.rects = []
+
+    def on_apply(self, event):
+        """Send text to the canvas to mark rectangles with text"""
+        pass
+
+    def on_selection(self, event):
+        """
+        Apply the selection from listbox to the rectangle selected (if any)
+        """
+        N = self.listitems[self.listbox.GetSelection()]
+        if self.v.image is not None:
+            self.v.applytype(N)
+
+
+    def on_about(self, event):
         dlg = wx.MessageDialog(self, "A short description etc", "About FormCreator", wx.OK)
         dlg.ShowModal()
         dlg.Destroy()
 
-    def onExit(self, event):
+    def on_exit(self, event):
+        print("Cya")
         self.Close(True)  # close program
 
-    def onDelete(self, event):
+    def on_delete(self, event):
         if self.v.image is not None:
-            self.v.deleteSelectedRect()
+            self.v.deleteselectedrect()
 
-    def delAll(self, event):
+    def del_all(self, event):
         if self.v.image is not None:
-            self.v.deleteAllRects()
+            self.v.deleteallrects()
 
-    def setTypeText(self, text):
+    def set_type(self, text):
         self.listbox.SetStringSelection(text)
 
-    def applyName(self, event):
+    def apply_name(self, event):
         #print("we're typing")
         if self.v.image is not None:
-            self.v.applyName(self.idText.Value)
+            self.v.applyname(self.idtext.Value)
 
-    def toggleEditMode(self, event):
+    def toggle_edit(self, event):
         """Turn on editing mode for canvas"""
         if self.v.image is not None:
             # invert the state of edit mode
-            self.v.editMode = not self.v.editMode
+            self.v.editmode = not self.v.editmode
 #end
