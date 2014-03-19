@@ -9,13 +9,12 @@ import wx
 from View import View, Preferences
 from json import loads, dumps
 
-"""
-Form Creator app design class
-All functionality of the GUI here
-"""
-
 
 class FormCreator(wx.Frame):
+    """
+    FormCreator GUI class frame
+    All design layout code goes into this class
+    """
     def __init__(self, parent, title):
         self.w, self.h = 800, 600
         wx.Frame.__init__(self, parent, title=title)
@@ -67,6 +66,7 @@ class FormCreator(wx.Frame):
         closebutton = fmenu.Append(wx.ID_CLOSE, "Close", "Close an image mapping")
         fmenu.AppendSeparator()
         aboutbutton = fmenu.Append(wx.ID_ABOUT, "About", "Info on this program")
+        statsbutton = fmenu.Append(wx.ID_STATIC, "Stats", "Statistical data on the view")
         fmenu.AppendSeparator()
         exitbutton = fmenu.Append(wx.ID_EXIT, "E&xit", "Terminate the program")
         emenu = wx.Menu()
@@ -88,6 +88,7 @@ class FormCreator(wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_save, savebutton)
         self.Bind(wx.EVT_MENU, self.on_close, closebutton)
         self.Bind(wx.EVT_MENU, self.on_about, aboutbutton)
+        self.Bind(wx.EVT_MENU, self.on_stats, statsbutton)
         self.Bind(wx.EVT_MENU, self.on_exit, exitbutton)
         self.Bind(wx.EVT_MENU, self.filter, filtbutton)
         self.Bind(wx.EVT_MENU, self.on_delete, deletebutton)
@@ -183,43 +184,57 @@ class FormCreator(wx.Frame):
                 page_title = new_fname
                 css = ".sourceImage{ z-index: -1; }\n"
                 html = "<img src=\"{0}\" class=\"sourceImage\" />\n".format(new_fname)
+
+                text_size_divider = 9  # size to divide rect width by for HTML text
                 for key, r in rmap_data.items():
                     # append CSS
-                    css += "."+key+"{position:absolute;top:"+str(r["y"])+"px;left:"+str(r["x"])+"px;}\n"
+                    # horiz: off by 10px, vert: off by 10px
+                    css += "."+key+"{position:absolute;top:"+str(r["y"]+10)+"px;left:"+str(r["x"]+10)+"px;}\n"
                     # append HTML
-                    if r["typerect"] is "text":
+                    if r["typerect"] == "text":
                         i = "<input type=\"text\" class=\"{0}\" size=\"{1}\" name=\"{2}\" id=\"{2}\" />\n"
-                        html += i.format(key, r["w"]/4, r["idtag"])
+                        html += i.format(key, r["w"]/text_size_divider, r["idtag"])
                     else:
                         i = "<input type=\"{0}\" class=\"{1}\" name=\"{2}\" id=\"{2}\" />\n"
                         html += i.format(r["typerect"], key, r["idtag"])
                 f.write(skeletal_data.format(page_title, css, html))
 
-            self.SetStatusText(Preferences.RmapSaved.format(str(join(dirname, new_fname))))
+            self.SetStatusText(Preferences.RmapSaved.format(str(join(newdir, new_fname))))
         else:
             self.SetStatusText(Preferences.noImageLoaded)
 
     def on_close(self, event):
+        """Close the image and remove excess data from the viewer"""
         self.img = ""
         self.v.clear_all()
 
     def on_selection(self, event):
-        """
-        Apply the selection from listbox to the rectangle selected (if any)
-        """
+        """Apply the selection from listbox to the rectangle selected (if any)"""
         n = self.listitems[self.listbox.GetSelection()]
         if self.v.image is not None:
             self.v.applytype(n)
 
     def filter(self, event):
+        """Filter any bad rectangles from the buffer"""
         if self.v.image is not None:
             self.v.filter_rects()
             self.SetStatusText(Preferences.filterRects)
 
     def on_about(self, event):
-        dlg = wx.MessageDialog(self, "A short description etc", "About FormCreator", wx.OK)
+        """Instruction dialog for the program"""
+        dlg = wx.MessageDialog(self, "\n".join(Preferences.aboutAppInstructions), "About FormCreator", wx.OK)
         dlg.ShowModal()
         dlg.Destroy()
+
+    def on_stats(self, event):
+        """Statistical count data for the current view"""
+        if self.v.image is not None:
+            s, t, c, r = self.v.statistics()
+            dlg = wx.MessageDialog(self, Preferences.statisticalData.format(s, t, c, r), "Statistics", wx.OK)
+            dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            self.SetStatusText(Preferences.noImageLoaded)
 
     def on_exit(self, event):
         self.Close(True)  # close program

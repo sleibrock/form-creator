@@ -3,15 +3,11 @@
 __author__ = 'Steven'
 import wx
 
-"""
-View data classes and objects
-functionality of drawing and data management here
-"""
-
 
 class Rect(object):
     """
     Class to store rectangle information
+    Stores (x,y,w,h), the type of Rect, and the ID of the rect
     """
     def __init__(self, x, y, w, h, idtag="", typerect="text"):
         self.x, self.y, self.w, self.h = x, y, w, h
@@ -26,9 +22,10 @@ class Rect(object):
 class Preferences(object):
     """
     Class to store application preferences
-    Load from JSON format preferrably
+    One day this may load from a JSON file for customization
+    Stores strings to use in basic messages/alerts as well
     """
-    version = "0.2"
+    version = "0.3"
     staticFolder = "static"
     highlightedRectangleBorder = wx.GREEN
     displayRectangleBorder = wx.RED
@@ -44,9 +41,21 @@ class Preferences(object):
     deletingRect = "Deleting selected rectangle"
     deletingAllRects = "Deleting all rects! (Careful!)"
     filterRects = "Filtering bad rectangles"
+    statisticalData = "{0} Total Rectangles\n{1} Text Rects\n{2} Check Rects\n{3} Radio Rects"
+    aboutAppInstructions = ["Open up an image, left click to drag rectangles",
+                            "Right click to pan around the image",
+                            "Middle click to delete a selected rectangle",
+                            "Use menu options for further operations (filter, delete all, etc)",
+                            "Saving creates a new folder with JSON data and an HTML file"]
 
 
 class View(wx.Panel):
+    """
+    The Image Viewing class
+    Blits an image onto the screen and allows you to draw rectangles over it
+    Rect data is exported in JSON format for later use
+    """
+
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
@@ -123,12 +132,14 @@ class View(wx.Panel):
         """
         Delete currently selected rectangle
         """
+        removal = None
         if self.selrect is not None:
             for i, R in enumerate(self.rects):
                 if R.data is self.selrect.data:
                     removal = i
             self.selrect = None
-            self.rects.pop(removal)
+            if removal is not None:
+                self.rects.pop(removal)
         else:
             self.parent.SetStatusText(Preferences.cantFindRectangle)
         self.Refresh()
@@ -140,10 +151,12 @@ class View(wx.Panel):
         self.rects = []
 
     def applytype(self, typerect):
+        """Apply the type to the current selected rect"""
         if self.selrect is not None:
             self.selrect.typerect = typerect
 
     def applyname(self, name):
+        """Apply the name to the current selected rect"""
         if self.selrect is not None:
             self.selrect.idtag = name
 
@@ -159,19 +172,30 @@ class View(wx.Panel):
         pass
 
     def clear_all(self):
-        """Clear all data from the view"""
+        """Clear all data from the view (basically emptying it out"""
         self.image = None
         self.selrect = None
         self.displayrect = None
-        self.offsetx = 0
-        self.offsety = 0
+        self.offsetx, self.offsety = 0, 0
         self.rects = []
 
     def filter_rects(self, minwidth=20, minheight=20):
         """Filter any bad rects that are just too tiny"""
-
-        filt = lambda R: R.w > minwidth and R.h > minheight
+        filt = lambda r: all([r.w > minwidth, r.h > minheight])
         self.rects = [Rectangle for Rectangle in self.rects if filt(Rectangle)]
+
+    def statistics(self):
+        """
+        Return statistics of the current View
+        (total # of rects, # of text rects, # of checks, # radios)
+        """
+        # Redundant code to avoid using if-statements (they're boring)
+        types = [rect.typerect for rect in self.rects]
+        s = len(types)
+        t = len([string for string in types if string is "text"])
+        c = len([string for string in types if string is "checkbox"])
+        r = len([string for string in types if string is "radio"])
+        return tuple((s, t, c, r))
 
     ###########################################  Event handler basic functions
     def motion(self, event):
@@ -221,13 +245,14 @@ class View(wx.Panel):
         Create a new rectangle, test if it hits anything, append it
         Subtract the image panning offsets for HTML purposes
         """
+        event.Skip()
         self.leftclick = False
         if self.displayrect:
             x, y = self.leftclick_topleft[0] - self.offsetx, self.leftclick_topleft[1] - self.offsety
             x2, y2 = self.leftclick_botright[0] - self.offsetx, self.leftclick_botright[1] - self.offsety
-            R = Rect(*self.createrect((x, y), (x2, y2)))
-            if not self.colliderects(R):
-                self.rects.append(R)
+            r = Rect(*self.createrect((x, y), (x2, y2)))
+            if not self.colliderects(r):
+                self.rects.append(r)
             self.displayrect = False
         self.Refresh()
 
@@ -246,12 +271,10 @@ class View(wx.Panel):
 
     def middown(self, event):
         event.Skip()
-        print("mid down")
         self.middleclick = True
 
     def midup(self, event):
         event.Skip()
-        print("mid up")
         self.middleclick = False
         if self.selrect is not None:
             self.deleteselectedrect()
@@ -261,6 +284,7 @@ class View(wx.Panel):
         The main Drawing function
         All visuals are done here
         """
+        event.Skip()
         w, h = self.GetClientSize()
         dc = wx.AutoBufferedPaintDC(self)
         dc.Clear()
