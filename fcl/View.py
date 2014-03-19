@@ -41,6 +41,7 @@ class Preferences(object):
     deletingRect = "Deleting selected rectangle"
     deletingAllRects = "Deleting all rects! (Careful!)"
     filterRects = "Filtering bad rectangles"
+    cleanRects = "Cleaning up rects with no names"
     statisticalData = "{0} Total Rectangles\n{1} Text Rects\n{2} Check Rects\n{3} Radio Rects"
     aboutAppInstructions = ["Open up an image, left click to drag rectangles",
                             "Right click to pan around the image",
@@ -184,6 +185,11 @@ class View(wx.Panel):
         filt = lambda r: all([r.w > minwidth, r.h > minheight])
         self.rects = [Rectangle for Rectangle in self.rects if filt(Rectangle)]
 
+    def cleanup(self):
+        """Clean up rects that don't have name tags"""
+        filt = lambda r: len(r.idtag.strip())
+        self.rects = [Rectangle for Rectangle in self.rects if filt(Rectangle)]
+
     def statistics(self):
         """
         Return statistics of the current View
@@ -192,9 +198,9 @@ class View(wx.Panel):
         # Redundant code to avoid using if-statements (they're boring)
         types = [rect.typerect for rect in self.rects]
         s = len(types)
-        t = len([string for string in types if string is "text"])
-        c = len([string for string in types if string is "checkbox"])
-        r = len([string for string in types if string is "radio"])
+        t = len([string for string in types if string == "text"])
+        c = len([string for string in types if string == "checkbox"])
+        r = len([string for string in types if string == "radio"])
         return tuple((s, t, c, r))
 
     ###########################################  Event handler basic functions

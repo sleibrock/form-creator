@@ -8,6 +8,7 @@ from shutil import copy
 import wx
 from View import View, Preferences
 from json import loads, dumps
+# TODO: make a popup window showing text data of all rects
 
 
 class FormCreator(wx.Frame):
@@ -72,6 +73,7 @@ class FormCreator(wx.Frame):
         emenu = wx.Menu()
         filtbutton = emenu.Append(wx.ID_CUT, "Filter", "Filter any 'bad' rectangles we can't use")
         fmenu.AppendSeparator()
+        cleanbutton = emenu.Append(wx.ID_ABORT, "Clean", "Remove any rectangles that don't have ID tags")
         deletebutton = emenu.Append(wx.ID_DELETE, "Delete", "Delete the current selection")
         delallbutton = emenu.Append(wx.ID_EXECUTE, "Delete All", "Delete all rectangles (panic mode!)")
 
@@ -91,6 +93,7 @@ class FormCreator(wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_stats, statsbutton)
         self.Bind(wx.EVT_MENU, self.on_exit, exitbutton)
         self.Bind(wx.EVT_MENU, self.filter, filtbutton)
+        self.Bind(wx.EVT_MENU, self.cleanup, cleanbutton)
         self.Bind(wx.EVT_MENU, self.on_delete, deletebutton)
         self.Bind(wx.EVT_MENU, self.del_all, delallbutton)
         self.Bind(wx.EVT_LISTBOX, self.on_selection, self.listbox)
@@ -154,8 +157,10 @@ class FormCreator(wx.Frame):
                 return False
 
             # make a directory with the filename
+            # don't make a directory if the directory exists
             newdir = join(dirname, filename)
-            mkdir(newdir)
+            if not isdir(newdir):
+                mkdir(newdir)
 
             # build a rectangle dictionary to use in a JSON export
             rmap_data = {}
@@ -165,10 +170,11 @@ class FormCreator(wx.Frame):
                 rmap_data["rect"+str(i)] = d
 
             # Copy the original image
-            copy(self.img, join(newdir, self.filename))
-            fname = self.filename.split(".")
-            new_fname = ".".join([filename, fname.pop()])
-            rename(join(newdir, self.filename), join(newdir, new_fname))
+            if not isfile(join(newdir, self.filename)):
+                copy(self.img, join(newdir, self.filename))
+                fname = self.filename.split(".")
+                new_fname = ".".join([filename, fname.pop()])
+                rename(join(newdir, self.filename), join(newdir, new_fname))
 
             # dump the RMAP data
             with open(join(newdir, filename)+".rmap", "w") as F:
@@ -191,10 +197,10 @@ class FormCreator(wx.Frame):
                     # horiz: off by 10px, vert: off by 10px
                     css += "."+key+"{position:absolute;top:"+str(r["y"]+10)+"px;left:"+str(r["x"]+10)+"px;}\n"
                     # append HTML
-                    if r["typerect"] == "text":
+                    if r["typerect"] == "text" and r["idtag"].strip() != "":
                         i = "<input type=\"text\" class=\"{0}\" size=\"{1}\" name=\"{2}\" id=\"{2}\" />\n"
                         html += i.format(key, r["w"]/text_size_divider, r["idtag"])
-                    else:
+                    elif r["idtag"].strip() != "":  # don't add rects without tags
                         i = "<input type=\"{0}\" class=\"{1}\" name=\"{2}\" id=\"{2}\" />\n"
                         html += i.format(r["typerect"], key, r["idtag"])
                 f.write(skeletal_data.format(page_title, css, html))
@@ -219,6 +225,11 @@ class FormCreator(wx.Frame):
         if self.v.image is not None:
             self.v.filter_rects()
             self.SetStatusText(Preferences.filterRects)
+
+    def cleanup(self, event):
+        if self.v.image is not None:
+            self.v.cleanup()
+            self.SetStatusText(Preferences.cleanRects)
 
     def on_about(self, event):
         """Instruction dialog for the program"""
