@@ -13,25 +13,37 @@ class Rect(object):
     """
     Class to store rectangle information
     """
-    def __init__(self, x, y, w, h):
+    def __init__(self, x, y, w, h, idtag="", typerect="text"):
         self.x, self.y, self.w, self.h = x, y, w, h
         self.data = (x, y, w, h)
-        self.idtag = ""  # name tag of the Rect
-        self.typerect = "text"  # default
+        self.idtag = idtag  # name tag of the Rect
+        self.typerect = typerect  # default
 
     def __iter__(self):
         return self.data
+
 
 class Preferences(object):
     """
     Class to store application preferences
     Load from JSON format preferrably
     """
-    version = "0.1"
+    version = "0.2"
+    staticFolder = "static"
     highlightedRectangleBorder = wx.GREEN
     displayRectangleBorder = wx.RED
     inactiveRectangleBorder = wx.BLUE
     noImgText = "Load an image to process"
+    welcomeMessage = "Welcome to Form Creator!"
+    noRmapFound = "No RMAP data found, starting from scratch"
+    RmapFound = "RMAP found, loading rectangles into buffer"
+    failedToSave = "Failed to save!"
+    RmapSaved = "RMAP data saved to: {0}"
+    noImageLoaded = "You can't save data without an image!"
+    cantFindRectangle = "Can't find rectangle to delete"
+    deletingRect = "Deleting selected rectangle"
+    deletingAllRects = "Deleting all rects! (Careful!)"
+    filterRects = "Filtering bad rectangles"
 
 
 class View(wx.Panel):
@@ -41,7 +53,6 @@ class View(wx.Panel):
 
         # Keep track of the parent
         self.parent = parent
-        self.editmode = False  # don't let yourself go crazy on rectangle creation
 
         self.leftclick = False
         self.rightclick = False
@@ -64,7 +75,8 @@ class View(wx.Panel):
         self.Bind(wx.EVT_LEFT_UP, self.leftup)
         self.Bind(wx.EVT_RIGHT_DOWN, self.rightdown)
         self.Bind(wx.EVT_RIGHT_UP, self.rightup)
-        self.Bind(wx.EVT_KEY_DOWN, self.keydown)
+        self.Bind(wx.EVT_MIDDLE_DOWN, self.middown)
+        self.Bind(wx.EVT_MIDDLE_UP, self.midup)
 
     def on_size(self, event):
         """Refresh info when app size changes"""
@@ -118,7 +130,7 @@ class View(wx.Panel):
             self.selrect = None
             self.rects.pop(removal)
         else:
-            self.parent.SetStatusText("Can't find rectangle to delete")
+            self.parent.SetStatusText(Preferences.cantFindRectangle)
         self.Refresh()
 
     def deleteallrects(self):
@@ -135,8 +147,37 @@ class View(wx.Panel):
         if self.selrect is not None:
             self.selrect.idtag = name
 
+    def read_json(self, json):
+        """
+        Read the json loads data, convert to Rects
+        """
+        for i, k in json.items():
+            print("{0} - {1}".format(i, k))
+            data = (k["x"], k["y"], k["w"], k["h"], k["idtag"], k["typerect"])
+            rect_addition = Rect(*data)
+            self.rects.append(rect_addition)
+        pass
+
+    def clear_all(self):
+        """Clear all data from the view"""
+        self.image = None
+        self.selrect = None
+        self.displayrect = None
+        self.offsetx = 0
+        self.offsety = 0
+        self.rects = []
+
+    def filter_rects(self, minwidth=20, minheight=20):
+        """Filter any bad rects that are just too tiny"""
+
+        filt = lambda R: R.w > minwidth and R.h > minheight
+        self.rects = [Rectangle for Rectangle in self.rects if filt(Rectangle)]
+
+    ###########################################  Event handler basic functions
     def motion(self, event):
-        # The big mouse event determiner
+        """
+        Function for event managing mouse motion
+        """
         if self.leftclick and self.rightclick:
             # both left and right
             pass
@@ -155,16 +196,6 @@ class View(wx.Panel):
         else:
             pass  # do nothing?
         self.Refresh()
-
-    def keydown(self, event):
-        """
-        Mark certain actions to do basic tasks in the app
-        """
-        if event.GetKeyCode() in (wx.WXK_DELETE, wx.WXK_BACK):
-            self.deleteselectedrect()
-        else:
-            # Go down the hierarchy
-            event.Skip()
 
     def leftdown(self, event):
         # TODO: ensure the mouse positions are in order (otherwise it screws up)
@@ -212,6 +243,18 @@ class View(wx.Panel):
         self.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
         self.init_click = event.GetPosition()
         self.Refresh()
+
+    def middown(self, event):
+        event.Skip()
+        print("mid down")
+        self.middleclick = True
+
+    def midup(self, event):
+        event.Skip()
+        print("mid up")
+        self.middleclick = False
+        if self.selrect is not None:
+            self.deleteselectedrect()
 
     def onpaint(self, event):
         """

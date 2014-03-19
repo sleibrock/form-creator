@@ -2,7 +2,7 @@
 #-*- coding: utf-8 -*-
 __author__ = 'Steven'
 
-from os.path import join, isfile
+from os.path import join, isfile, isdir
 from os import mkdir, rename
 from shutil import copy
 import wx
@@ -58,7 +58,7 @@ class FormCreator(wx.Frame):
 
         # Status bar info and data
         self.CreateStatusBar()
-        self.SetStatusText("Welcome to Form Creator!")
+        self.SetStatusText(Preferences.welcomeMessage)
 
         # File menu operations and buttons
         fmenu = wx.Menu()
@@ -66,11 +66,13 @@ class FormCreator(wx.Frame):
         savebutton = fmenu.Append(wx.ID_SAVE, "Save", "Save your work")
         closebutton = fmenu.Append(wx.ID_CLOSE, "Close", "Close an image mapping")
         fmenu.AppendSeparator()
-        aboutbutton = fmenu.Append(wx.ID_ABOUT, "&About", "Info on this program")
+        aboutbutton = fmenu.Append(wx.ID_ABOUT, "About", "Info on this program")
         fmenu.AppendSeparator()
         exitbutton = fmenu.Append(wx.ID_EXIT, "E&xit", "Terminate the program")
         emenu = wx.Menu()
-        deletebutton = emenu.Append(wx.ID_DELETE, "&Delete", "Delete the current selection")
+        filtbutton = emenu.Append(wx.ID_CUT, "Filter", "Filter any 'bad' rectangles we can't use")
+        fmenu.AppendSeparator()
+        deletebutton = emenu.Append(wx.ID_DELETE, "Delete", "Delete the current selection")
         delallbutton = emenu.Append(wx.ID_EXECUTE, "Delete All", "Delete all rectangles (panic mode!)")
 
         mb = wx.MenuBar()
@@ -87,6 +89,7 @@ class FormCreator(wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_close, closebutton)
         self.Bind(wx.EVT_MENU, self.on_about, aboutbutton)
         self.Bind(wx.EVT_MENU, self.on_exit, exitbutton)
+        self.Bind(wx.EVT_MENU, self.filter, filtbutton)
         self.Bind(wx.EVT_MENU, self.on_delete, deletebutton)
         self.Bind(wx.EVT_MENU, self.del_all, delallbutton)
         self.Bind(wx.EVT_LISTBOX, self.on_selection, self.listbox)
@@ -105,7 +108,6 @@ class FormCreator(wx.Frame):
         """
         Open up an image and load it to the canvas
         """
-        # TODO: add a way to open up a JSON file and load the rectangle data
         dirname = ""
         dlg = wx.FileDialog(self, "Choose a file", dirname, "", "*.*", wx.OPEN)
         if dlg.ShowModal() == wx.ID_OK:
@@ -116,6 +118,21 @@ class FormCreator(wx.Frame):
             self.v.rects = []
             self.v.Refresh()  # trigger onpaint
             self.SetTitle("Form Creator : " + self.img)
+
+            # Read for an RMAP file
+            fname = self.filename.split(".")
+            fname.pop()
+            rmap_file = join(dirname, ".".join(fname + ["rmap"]))
+
+            if isfile(rmap_file):
+                # the file is here!
+                with open(rmap_file, "r") as f:
+                    rmap_rects = loads(f.read())
+                    self.v.read_json(rmap_rects)
+                self.SetStatusText(Preferences.RmapFound)
+            else:
+                self.SetStatusText(Preferences.noRmapFound)
+
         dlg.Destroy()
 
     def on_save(self, event):
@@ -124,7 +141,7 @@ class FormCreator(wx.Frame):
         Then write the rectangle data to HTML format
         and also a new readable JSON format (called .RMAP)
         """
-        # TODO: Make the Save function export an RMAP JSON and copy the original image to destination
+        # TODO: Make the save function only create new directories when it's a different filename
         if self.v.image is not None:
             dlg = wx.FileDialog(self, "Choose a name to save the file", "", "", ".rmap", wx.SAVE)
             if dlg.ShowModal() == wx.ID_OK:
@@ -132,7 +149,7 @@ class FormCreator(wx.Frame):
                 dirname = dlg.GetDirectory()
                 dlg.Destroy()
             else:
-                self.SetStatusText("Failed to save!")
+                self.SetStatusText(Preferences.failedToSave)
                 return False
 
             # make a directory with the filename
@@ -143,7 +160,7 @@ class FormCreator(wx.Frame):
             rmap_data = {}
             for i, r in enumerate(self.v.rects):
                 d = {"x": r.x, "y": r.y, "w": r.w, "h": r.h,
-                     "IDtag": r.idtag, "typeRect": r.typerect}
+                     "idtag": r.idtag, "typerect": r.typerect}
                 rmap_data["rect"+str(i)] = d
 
             # Copy the original image
@@ -159,34 +176,32 @@ class FormCreator(wx.Frame):
             # export HTML/CSS data to a new HTML file
             # .sourceImage( z-index: -1; }
             # TODO: finally create the HTML code exporter
-            with open("skeleton.html", "r") as f:
+            with open(join(Preferences.staticFolder, "skeleton.html"), "r") as f:
                 skeletal_data = f.read()
 
             with open(join(newdir, filename)+".html", "w") as f:
                 page_title = new_fname
                 css = ".sourceImage{ z-index: -1; }\n"
                 html = "<img src=\"{0}\" class=\"sourceImage\" />\n".format(new_fname)
-                s = str  # save character space
-
                 for key, r in rmap_data.items():
                     # append CSS
-                    css += "."+s(key)+"{position:absolute;top:"+s(r["y"])+"px;left:"+s(r["x"])+"px;}\n"
+                    css += "."+key+"{position:absolute;top:"+str(r["y"])+"px;left:"+str(r["x"])+"px;}\n"
                     # append HTML
-                    if r["typeRect"] is "text":
-                        html += "<input type=\"text\" class=\"{0}\" size=\"{1}\" />\n".format(key, r["w"]/4)
+                    if r["typerect"] is "text":
+                        i = "<input type=\"text\" class=\"{0}\" size=\"{1}\" name=\"{2}\" id=\"{2}\" />\n"
+                        html += i.format(key, r["w"]/4, r["idtag"])
                     else:
-                        html += "<input type=\"{0}\" class=\"{1}\" />\n".format(r["typeRect"], key)
+                        i = "<input type=\"{0}\" class=\"{1}\" name=\"{2}\" id=\"{2}\" />\n"
+                        html += i.format(r["typerect"], key, r["idtag"])
                 f.write(skeletal_data.format(page_title, css, html))
 
-            self.SetStatusText("RMAP data saved to: " + str(join(dirname, new_fname)))
+            self.SetStatusText(Preferences.RmapSaved.format(str(join(dirname, new_fname))))
         else:
-            self.SetStatusText("You can't write data without an image!")
+            self.SetStatusText(Preferences.noImageLoaded)
 
     def on_close(self, event):
         self.img = ""
-        self.v.image = None
-        self.v.editmode = False
-        self.v.rects = []
+        self.v.clear_all()
 
     def on_selection(self, event):
         """
@@ -196,22 +211,28 @@ class FormCreator(wx.Frame):
         if self.v.image is not None:
             self.v.applytype(n)
 
+    def filter(self, event):
+        if self.v.image is not None:
+            self.v.filter_rects()
+            self.SetStatusText(Preferences.filterRects)
+
     def on_about(self, event):
         dlg = wx.MessageDialog(self, "A short description etc", "About FormCreator", wx.OK)
         dlg.ShowModal()
         dlg.Destroy()
 
     def on_exit(self, event):
-        print("Cya")
         self.Close(True)  # close program
 
     def on_delete(self, event):
         if self.v.image is not None:
             self.v.deleteselectedrect()
+            self.SetStatusText(Preferences.deletingRect)
 
     def del_all(self, event):
         if self.v.image is not None:
             self.v.deleteallrects()
+            self.SetStatusText(Preferences.deletingAllRects)
 
     def set_type(self, text):
         self.listbox.SetStringSelection(text)
@@ -219,10 +240,4 @@ class FormCreator(wx.Frame):
     def apply_name(self, event):
         if self.v.image is not None:
             self.v.applyname(self.idtext.Value)
-
-    def toggle_edit(self, event):
-        """Turn on editing mode for canvas"""
-        if self.v.image is not None:
-            # invert the state of edit mode
-            self.v.editmode = not self.v.editmode
 #end
