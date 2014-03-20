@@ -114,6 +114,7 @@ class FormCreator(wx.Frame):
         """
         Open up an image and load it to the canvas
         """
+        event.Skip()
         dirname = ""
         dlg = wx.FileDialog(self, "Choose a file", dirname, "", "*.*", wx.OPEN)
         if dlg.ShowModal() == wx.ID_OK:
@@ -165,11 +166,11 @@ class FormCreator(wx.Frame):
 
                 # remove extension of file
                 fpath = self.img.split(".")
-                fpath.pop()
+                ext = fpath.pop()
                 fpath = ".".join(fpath)
 
                 # rewrite the RMAP and HTML
-                self.write_html_rmap(fpath, rmap_data,  fpath.split('\\').pop())
+                self.write_html_rmap(fpath, rmap_data,  fpath.split('\\').pop() + "." + ext)
                 self.SetStatusText(Preferences.RmapSaved.format(fpath))
             else:
                 dlg = wx.FileDialog(self, "Choose a name to save the file", "", "", ".rmap", wx.SAVE)
@@ -225,7 +226,6 @@ class FormCreator(wx.Frame):
     @staticmethod
     def write_html_printpage(filepath, rmap_data, json_data):
         """For future use in writing data to an HTML page (similar code as write_html_rmap)"""
-
         with open(join(Preferences.staticFolder, Preferences.SkeletonFile), "r") as f:
             skeletal_data = f.read()
 
