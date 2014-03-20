@@ -67,6 +67,7 @@ class FormCreator(wx.Frame):
         openbutton = fmenu.Append(wx.ID_OPEN, "Open", "Open up an image")
         savebutton = fmenu.Append(wx.ID_SAVE, "Save", "Save your work")
         closebutton = fmenu.Append(wx.ID_CLOSE, "Close", "Close an image mapping")
+        exportbutton = fmenu.Append(wx.ID_ADD, "Export", "Export to a print page")
         fmenu.AppendSeparator()
         aboutbutton = fmenu.Append(wx.ID_ABOUT, "About", "Info on this program")
         statsbutton = fmenu.Append(wx.ID_STATIC, "Stats", "Statistical data on the view")
@@ -91,6 +92,7 @@ class FormCreator(wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_open, openbutton)
         self.Bind(wx.EVT_MENU, self.on_save, savebutton)
         self.Bind(wx.EVT_MENU, self.on_close, closebutton)
+        self.Bind(wx.EVT_MENU, self.export_print_page, exportbutton)
         self.Bind(wx.EVT_MENU, self.on_about, aboutbutton)
         self.Bind(wx.EVT_MENU, self.on_stats, statsbutton)
         self.Bind(wx.EVT_MENU, self.on_exit, exitbutton)
@@ -143,6 +145,11 @@ class FormCreator(wx.Frame):
                 self.rmap_loaded = False
 
         dlg.Destroy()
+
+    def export_print_page(self, event):
+        event.Skip()
+        # TODO: write a file dialog to create a printable HTML page and export data
+        pass
 
     def on_save(self, event):
         """
@@ -224,6 +231,7 @@ class FormCreator(wx.Frame):
         pass
 
     @staticmethod
+    # TODO: data test writing to an HTML print page
     def write_html_printpage(filepath, rmap_data, json_data):
         """For future use in writing data to an HTML page (similar code as write_html_rmap)"""
         with open(join(Preferences.staticFolder, Preferences.SkeletonFile), "r") as f:
@@ -234,7 +242,11 @@ class FormCreator(wx.Frame):
             html = "<img src=\"{0}\" class=\"sourceImage\" />\n"
 
             for key, r in rmap_data.items():
-                pass
+                css += "."+key+"{position:absolute;top:"+str(r["y"]+10)+"px;left:"+str(r["x"]+10)+"px;}\n"
+                if r["typerect"] == "text" and r["idtag"].strip() != "":
+                    html = "<p class=\"\">{0}</p>".format("Hello")
+                else:
+                    pass
             f.write(skeletal_data.format(css, html))
 
     def on_close(self, event):
