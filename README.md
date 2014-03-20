@@ -4,7 +4,7 @@
 <ul>
     <li>Python</li>
     <li>wxPython</li>
-<ul>
+</ul>
 
 <h3>Platforms</h3>
 <p>Tested on the following:</p>
