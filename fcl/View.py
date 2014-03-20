@@ -27,6 +27,7 @@ class Preferences(object):
     """
     version = "0.3"
     staticFolder = "static"
+    SkeletonFile = "skeleton.html"
     highlightedRectangleBorder = wx.GREEN
     displayRectangleBorder = wx.RED
     inactiveRectangleBorder = wx.BLUE
