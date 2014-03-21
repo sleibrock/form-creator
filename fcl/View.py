@@ -36,6 +36,8 @@ class Preferences(object):
     noRmapFound = "No RMAP data found, starting from scratch"
     RmapFound = "RMAP found, loading rectangles into buffer"
     failedToSave = "Failed to save!"
+    failedToopen = "Failed to open a file"
+    failedToExport = "Failed to export the file"
     RmapSaved = "RMAP data saved to: {0}"
     noImageLoaded = "You can't save data without an image!"
     cantFindRectangle = "Can't find rectangle to delete"
@@ -104,6 +106,15 @@ class View(wx.Panel):
         x, y = init_click[0], init_click[1]
         w, h = abs(end_click[0] - x), abs(end_click[1] - y)
         return tuple((x, y, w, h))
+
+    def generate_rmap(self):
+        """Generate a JSON RMAP dictionary"""
+        rmap_data = {}
+        for i, r in enumerate(self.rects):
+            d = {"x": r.x, "y": r.y, "w": r.w, "h": r.h,
+                 "idtag": r.idtag, "typerect": r.typerect}
+            rmap_data["rect"+str(i)] = d
+        return rmap_data
 
     def colliderectpos(self, pos):
         """

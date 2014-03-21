@@ -143,13 +143,36 @@ class FormCreator(wx.Frame):
             else:
                 self.SetStatusText(Preferences.noRmapFound)
                 self.rmap_loaded = False
-
         dlg.Destroy()
 
     def export_print_page(self, event):
         event.Skip()
         # TODO: write a file dialog to create a printable HTML page and export data
-        pass
+        if self.v.image is not None:
+            # We don't require an RMAP file, just rect data that we can generate
+            dlg = wx.FileDialog(self, "Choose a JSON file to load", "", "", ".json", wx.SAVE)
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetFilename()
+                dirname = dlg.GetDirectory()
+                dlg.Destroy()
+            else:
+                self.SetStatusText(Preferences.failedToOpen)
+                return False
+
+            rmap_data = self.v.generate_rmap()
+            with open(join(dirname, filename), "r") as f:
+                json_data = f.read()
+
+            fd = self.img.split(".")
+            fd.pop()
+            fname = ".".join(fd)
+            with open(fname + ".print.html", "w") as f:
+                # do the writing here
+                # loop through each JSON data piece and reference the RMAP data
+                pass
+        else:
+            self.SetStatusText(Preferences.noImageLoaded)
+
 
     def on_save(self, event):
         """
@@ -160,17 +183,10 @@ class FormCreator(wx.Frame):
         event.Skip()
         # TODO: Make the save function only create new directories when it's a different filename
         if self.v.image is not None:
-
-            # build a rectangle dictionary to use in a JSON export
-            rmap_data = {}
-            for i, r in enumerate(self.v.rects):
-                d = {"x": r.x, "y": r.y, "w": r.w, "h": r.h,
-                     "idtag": r.idtag, "typerect": r.typerect}
-                rmap_data["rect"+str(i)] = d
+            rmap_data = self.v.generate_rmap()
 
             if self.rmap_loaded:  # this means we previously had an RMAP file loaded, so save to that
                 # Use self.img as the main determiner
-
                 # remove extension of file
                 fpath = self.img.split(".")
                 ext = fpath.pop()
@@ -199,7 +215,6 @@ class FormCreator(wx.Frame):
                 rename(join(newdir, self.filename), join(newdir, new_fname))
 
                 # export HTML/CSS data to a new HTML file
-                # TODO: finally create the HTML code exporter
                 self.write_html_rmap(join(newdir, filename), rmap_data, new_fname)
                 self.SetStatusText(Preferences.RmapSaved.format(str(join(newdir, new_fname))))
         else:
@@ -217,6 +232,7 @@ class FormCreator(wx.Frame):
             css = ".sourceImage{ z-index: -1; }\n"
             html = "<img src=\"{0}\" class=\"sourceImage\" />\n".format(new_fname)
             text_size_divider = 9  # size to divide rect width by for HTML text
+            grouped_boxes = {}  # keep count of grouped radio/checks and their values
             for key, r in rmap_data.items():
                 # append CSS - horiz: off by 10px, vert: off by 10px
                 css += "."+key+"{position:absolute;top:"+str(r["y"]+10)+"px;left:"+str(r["x"]+10)+"px;}\n"
@@ -225,29 +241,37 @@ class FormCreator(wx.Frame):
                     i = "<input type=\"text\" class=\"{0}\" size=\"{1}\" name=\"{2}\" id=\"{2}\" />\n"
                     html += i.format(key, r["w"]/text_size_divider, r["idtag"])
                 elif r["idtag"].strip() != "":  # don't add rects without tags
+                    # TODO: add a case for radios/checkboxes to add value incrementing for tags with shared names
                     i = "<input type=\"{0}\" class=\"{1}\" name=\"{2}\" id=\"{2}\" />\n"
                     html += i.format(r["typerect"], key, r["idtag"])
             f.write(skeletal_data.format(page_title, css, html))
-        pass
 
     @staticmethod
-    # TODO: data test writing to an HTML print page
     def write_html_printpage(filepath, rmap_data, json_data):
         """For future use in writing data to an HTML page (similar code as write_html_rmap)"""
+        # TODO: data test writing to an HTML print page
         with open(join(Preferences.staticFolder, Preferences.SkeletonFile), "r") as f:
             skeletal_data = f.read()
-
         with open(filepath+".print.html", "w") as f:
             css = ".sourceImage{z-index:-1;}\n"
             html = "<img src=\"{0}\" class=\"sourceImage\" />\n"
-
             for key, r in rmap_data.items():
                 css += "."+key+"{position:absolute;top:"+str(r["y"]+10)+"px;left:"+str(r["x"]+10)+"px;}\n"
                 if r["typerect"] == "text" and r["idtag"].strip() != "":
                     html = "<p class=\"\">{0}</p>".format("Hello")
                 else:
+                    # <input type"radio" checked> creates a checked radio
+                    # we need json info if the field was selected
                     pass
             f.write(skeletal_data.format(css, html))
+
+    def on_test(self, event):
+        """
+        Testing function on the menu
+        Do any unit tests here
+        """
+        event.Skip()
+        pass
 
     def on_close(self, event):
         """Close the image and remove excess data from the viewer"""
