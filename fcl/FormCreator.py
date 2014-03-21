@@ -161,15 +161,12 @@ class FormCreator(wx.Frame):
 
             rmap_data = self.v.generate_rmap()
             with open(join(dirname, filename), "r") as f:
-                json_data = f.read()
+                json_data = loads(f.read())
 
             fd = self.img.split(".")
             fd.pop()
             fname = ".".join(fd)
-            with open(fname + ".print.html", "w") as f:
-                # do the writing here
-                # loop through each JSON data piece and reference the RMAP data
-                pass
+            self.write_html_printpage(fname + ".print.html", rmap_data, json_data)
         else:
             self.SetStatusText(Preferences.noImageLoaded)
 
