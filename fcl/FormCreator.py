@@ -159,7 +159,7 @@ class FormCreator(wx.Frame):
         # TODO: write a file dialog to create a printable HTML page and export data
         if self.v.image is not None:
             # We don't require an RMAP file, just rect data that we can generate
-            dlg = wx.FileDialog(self, "Choose a JSON file to load", "", "", ".json", wx.SAVE)
+            dlg = wx.FileDialog(self, "Choose a JSON file to load", "", "", "", wx.SAVE)
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetFilename()
                 dirname = dlg.GetDirectory()
@@ -168,13 +168,21 @@ class FormCreator(wx.Frame):
                 self.SetStatusText(Preferences.failedToOpen)
                 return False
 
-            rmap_data = self.v.generate_rmap()
-            with open(join(dirname, filename), "r") as f:
-                json_data = loads(f.read())
-
+            rmap_data = self.v.rects
+            try:
+                with open(join(dirname, filename), "r") as f:
+                    json_data = loads(f.read())
+            except Exception as e:
+                print("Error: {0}".format(str(e)))
+                print("Not a valid JSON format")
+                self.SetStatusText(Preferences.failedToExport)
+                return False
             fd = self.img.split(".")
             fd.pop()
             fname = ".".join(fd)
+
+            rmap_data = View.filter_list(rmap_data)
+            rmap_data = View.clean_list(rmap_data)
             self.write_html_printpage(fname, rmap_data, json_data)
         else:
             self.SetStatusText(Preferences.noImageLoaded)
@@ -200,7 +208,7 @@ class FormCreator(wx.Frame):
                 self.write_html_rmap(fpath, rmap_data,  fpath.split('\\').pop() + "." + ext)
                 self.SetStatusText(Preferences.RmapSaved.format(fpath))
             else:
-                dlg = wx.FileDialog(self, "Choose a name to save the file", "", "", ".rmap", wx.SAVE)
+                dlg = wx.FileDialog(self, "Choose a name to save the file", "", "", "rmap", wx.SAVE)
                 if dlg.ShowModal() == wx.ID_OK:
                     filename = dlg.GetFilename().replace(".rmap", "")
                     dirname = dlg.GetDirectory()
@@ -266,7 +274,7 @@ class FormCreator(wx.Frame):
             css = ".sourceImage{z-index:-1;}\n"
             html = "<img src=\"{0}\" class=\"sourceImage\" />\n"
             for key, r in rmap_data.items():
-                print(json_data[r["idtag"]])
+                print("{0} -- {1}".format(key, json_data[r["idtag"]]))
                 css += "."+key+"{position:absolute;top:"+str(r["y"]+10)+"px;left:"+str(r["x"]+10)+"px;}\n"
                 if r["typerect"] == "text" and r["idtag"].strip() != "":
                     html = "<p class=\"\">{0}</p>".format("Hello")
@@ -274,7 +282,7 @@ class FormCreator(wx.Frame):
                     # <input type"radio" checked> creates a checked radio
                     # we need json info if the field was selected
                     pass
-            f.write(skeletal_data.format(css, html))
+            #f.write(skeletal_data.format(css, html))
 
     @staticmethod
     def export_json(data):

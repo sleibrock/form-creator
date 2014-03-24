@@ -93,14 +93,19 @@ class View(wx.Panel):
         w, h = abs(end_click[0] - x), abs(end_click[1] - y)
         return tuple((x, y, w, h))
 
-    def generate_rmap(self):
-        """Generate a JSON RMAP dictionary"""
+    @staticmethod
+    def generate_data(rects):
+        """Static dictionary generator"""
         rmap_data = {}
-        for i, r in enumerate(self.rects):
+        for i, r in enumerate(rects):
             d = {"x": r.x, "y": r.y, "w": r.w, "h": r.h,
-                 "idtag": r.idtag, "typerect": r.typerect}
+                 "idtag": r.idtag, "typeret": r.typerect, "value": r.value}
             rmap_data["rect"+str(i)] = d
         return rmap_data
+
+    def generate_rmap(self):
+        """Generate a JSON RMAP dictionary"""
+        return View.generate_data(self.rects)
 
     def colliderectpos(self, pos):
         """
@@ -177,15 +182,25 @@ class View(wx.Panel):
         self.offsetx, self.offsety = 0, 0
         self.rects = []
 
+    @staticmethod
+    def filter_list(rects, minwidth=20, minheight=20):
+        """Static filter a list (used to not ruin stored data)"""
+        filt = lambda r: all([r.w > minwidth, r.h > minheight])
+        return [Rectangle for Rectangle in rects if filt(Rectangle)]
+
+    @staticmethod
+    def clean_list(rects):
+        """Static clean list method"""
+        filt = lambda r: len(r.idtag.strip())
+        return [Rectangle for Rectangle in rects if filt(Rectangle)]
+
     def filter_rects(self, minwidth=20, minheight=20):
         """Filter any bad rects that are just too tiny"""
-        filt = lambda r: all([r.w > minwidth, r.h > minheight])
-        self.rects = [Rectangle for Rectangle in self.rects if filt(Rectangle)]
+        self.rects = View.filter_list(self.rects, minwidth, minheight)
 
     def cleanup(self):
         """Clean up rects that don't have name tags"""
-        filt = lambda r: len(r.idtag.strip())
-        self.rects = [Rectangle for Rectangle in self.rects if filt(Rectangle)]
+        self.rects = View.clean_list(self.rects)
 
     def statistics(self):
         """
@@ -303,9 +318,13 @@ class View(wx.Panel):
                 # draw the being-made rectangle
                 dc.SetPen(wx.Pen(Preferences.displayRectangleBorder, 2, style=wx.DOT_DASH))
                 dc.DrawRectangle(*self.createrect(self.leftclick_topleft, self.leftclick_botright))
-            dc.SetPen(wx.Pen(Preferences.inactiveRectangleBorder, 1, style=wx.SOLID))
             for r in self.rects:
-                dc.DrawRectangle(r.x + self.offsetx, r.y + self.offsety, r.w, r.h)
+                if r.idtag.strip() != "":
+                    dc.SetPen(wx.Pen(Preferences.inactiveRectangleBorder, 1, style=wx.SOLID))
+                    dc.DrawRectangle(r.x + self.offsetx, r.y + self.offsety, r.w, r.h)
+                else:
+                    dc.SetPen(wx.Pen(Preferences.errorRectangleBorder, 1, style=wx.SOLID))
+                    dc.DrawRectangle(r.x + self.offsetx, r.y + self.offsety, r.w, r.h)
             if self.selrect is not None:
                 dc.SetPen(wx.Pen(Preferences.highlightedRectangleBorder, 1, style=wx.SOLID))
                 dc.DrawRectangle(self.selrect.x + self.offsetx, self.selrect.y + self.offsety,
