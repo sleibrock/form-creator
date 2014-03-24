@@ -2,9 +2,11 @@
 #-*- coding: utf-8 -*-
 __author__ = 'Steven'
 
-import unittest
+#import unittest
 import random
+import wx
 from itertools import combinations
+
 
 
 class Rect(object):
@@ -26,13 +28,14 @@ class Rect(object):
         """Collision code"""
         pass
 
-class TestRect(unittest.TestCase):
-    """Unit case for Rect class"""
-
+#class TestRect(unittest.TestCase):
+    #"""Unit case for Rect class"""
+class RedrawColls(wx.Frame):
     def setUp(self):
         self.seq = range(1000)
         self.check = 0
         self.recs = []
+        self.collrecs = []
 
     def create_rect(self):
         """
@@ -45,19 +48,45 @@ class TestRect(unittest.TestCase):
         h = random.choice(self.seq)
         return Rect(x, y, w, h)
 
-    def add_recs(self):
+    def add_recs(self, x):
         """
         Adds a number of rectangles to 'recs' for testing.
         :param rect:
         """
-        for i in range(0,100,1):
+        for i in range(0,x,1):
             self.recs.append(self.create_rect())
 
-    def test_collision(self):
+    def find_collision(self, x):
         """
         Checks the rectangles for collisions
         """
-        self.add_recs()
+        self.add_recs(x)
         combos = combinations(self.recs, 2)
+
         for pair in combos:
-            self.assertTrue(pair[0].collide(pair[1]))
+            if pair[0].collide(pair[1]):
+
+                self.collrecs.append(pair[0])
+                self.collrecs.append(pair[1])
+                #self.collrecs.append([pair[0], pair[1]])
+
+
+                #self.assertTrue(pair[0].collide(pair[1]))
+
+    def disp_collisions(self):
+        """
+        displays collisons for inspection.
+        """
+        dc = wx.AutoBufferedPaintDC(self)
+        dc.Clear()
+
+        dc.SetBrush(wx.Brush("0000FF000", style=wx.LINE))
+
+        for rec in self.collrecs:
+            dc.DrawRectangle(rec)
+
+if __name__ == "__main__":
+    app = wx.App(False)
+    frame = RedrawColls(None, 30000)
+    frame.Show(True)
+    app.MainLoop()
