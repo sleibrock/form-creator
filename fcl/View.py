@@ -99,7 +99,7 @@ class View(wx.Panel):
         rmap_data = {}
         for i, r in enumerate(rects):
             d = {"x": r.x, "y": r.y, "w": r.w, "h": r.h,
-                 "idtag": r.idtag, "typeret": r.typerect, "value": r.value}
+                 "idtag": r.idtag, "typerect": r.typerect, "value": r.value}
             rmap_data["rect"+str(i)] = d
         return rmap_data
 

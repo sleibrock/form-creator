@@ -183,7 +183,8 @@ class FormCreator(wx.Frame):
 
             rmap_data = View.filter_list(rmap_data)
             rmap_data = View.clean_list(rmap_data)
-            self.write_html_printpage(fname, rmap_data, json_data)
+            rmap_data = View.generate_data(rmap_data)
+            self.write_html_printpage(self.filename, fname, rmap_data, json_data)
         else:
             self.SetStatusText(Preferences.noImageLoaded)
 
@@ -264,7 +265,7 @@ class FormCreator(wx.Frame):
             f.write(skeletal_data.format(page_title, css, html))
 
     @staticmethod
-    def write_html_printpage(filepath, rmap_data, json_data):
+    def write_html_printpage(iname, filepath, rmap_data, json_data):
         """For future use in writing data to an HTML page (similar code as write_html_rmap)"""
         # TODO: data test writing to an HTML print page
         # TODO: fix RectData.Rect to store a "value" attribute
@@ -272,17 +273,18 @@ class FormCreator(wx.Frame):
             skeletal_data = f.read()
         with open(filepath+".print.html", "w") as f:
             css = ".sourceImage{z-index:-1;}\n"
-            html = "<img src=\"{0}\" class=\"sourceImage\" />\n"
+            html = "<img src=\"{0}\" class=\"sourceImage\" />\n".format(iname)
             for key, r in rmap_data.items():
                 print("{0} -- {1}".format(key, json_data[r["idtag"]]))
                 css += "."+key+"{position:absolute;top:"+str(r["y"]+10)+"px;left:"+str(r["x"]+10)+"px;}\n"
                 if r["typerect"] == "text" and r["idtag"].strip() != "":
-                    html = "<p class=\"\">{0}</p>".format("Hello")
+                    print(r)
+                    html += "<p class=\"{0}\">{1}</p>".format(key, json_data[r["idtag"]]["value"])
                 else:
                     # <input type"radio" checked> creates a checked radio
                     # we need json info if the field was selected
                     pass
-            #f.write(skeletal_data.format(css, html))
+            f.write(skeletal_data.format("", css, html))
 
     @staticmethod
     def export_json(data):
