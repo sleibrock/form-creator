@@ -2,8 +2,70 @@
     "fullName": {
         "value": "Steven Leibrock"
     },
-
     "emailNotify": {
-        "value": 1
+        "value": "1"
+    },
+    "homeAddress": {
+        "value": "123 Fake Street"
+    },
+    "city": {
+        "value": "Wantagh"
+    },
+    "apartment": {
+        "value": "1"
+    },
+    "state": {
+        "value": "NY"
+    },
+    "zip": {
+        "value": "11793"
+    },
+    "county": {
+        "value": "Nassau"
+    },
+    "mailingAddress": {
+        "value": "345 Fake Road"
+    },
+    "mailingApartment": {
+        "value": "1"
+    },
+    "mailingCity": {
+        "value": "Wantagh"
+    },
+    "mailingState": {
+        "value": "OH"
+    },
+    "mailingZip": {
+        "value": "12345"
+    },
+    "mailingCounty": {
+        "value": "Suffolk"
+    },
+    "phoneFirst": {
+        "value": "516"
+    },
+    "phoneMiddle": {
+        "value": "647"
+    },
+    "phoneLast": {
+        "value": "8784"
+    },
+    "otherPhoneFirst": {
+        "value": "516"
+    },
+    "otherPhoneMiddle": {
+        "value": "123"
+    },
+    "otherPhoneLast": {
+        "value": "4567"
+    },
+    "email": {
+        "value": "leibrockoli@fakemail.com"
+    },
+    "emailNotify": {
+        "value": "1"
+    },
+    "preferredLanguage": {
+        "value": "ENGLISH MOTHA***** DO YOU SPEAK IT"
     }
 }
