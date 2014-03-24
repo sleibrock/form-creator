@@ -1,5 +1,6 @@
 __author__ = 'Steven'
 
+
 class Rect(object):
     """
     Class to store rectangle information

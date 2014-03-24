@@ -22,7 +22,7 @@ class Preferences(object):
     noRmapFound = "No RMAP data found, starting from scratch"
     RmapFound = "RMAP found, loading rectangles into buffer"
     failedToSave = "Failed to save!"
-    failedToopen = "Failed to open a file"
+    failedToOpen = "Failed to open target file"
     failedToExport = "Failed to export the file"
     RmapSaved = "RMAP data saved to: {0}"
     noImageLoaded = "You can't save data without an image!"

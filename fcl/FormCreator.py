@@ -179,7 +179,6 @@ class FormCreator(wx.Frame):
         else:
             self.SetStatusText(Preferences.noImageLoaded)
 
-
     def on_save(self, event):
         """
         Copy the image from SRC to the destination directory + folder
@@ -187,7 +186,6 @@ class FormCreator(wx.Frame):
         and also a new readable JSON format (called .RMAP)
         """
         event.Skip()
-        # TODO: Make the save function only create new directories when it's a different filename
         if self.v.image is not None:
             rmap_data = self.v.generate_rmap()
 
@@ -247,7 +245,6 @@ class FormCreator(wx.Frame):
                     i = "<input type=\"text\" class=\"{0}\" size=\"{1}\" name=\"{2}\" id=\"{2}\" />\n"
                     html += i.format(key, r["w"]/text_size_divider, r["idtag"])
                 elif r["idtag"].strip() != "":  # don't add rects without tags
-                    # TODO: add a case for radios/checkboxes to add value incrementing for tags with shared names
                     if r["idtag"] in grouped_boxes:
                         value = grouped_boxes[r["idtag"]]
                         grouped_boxes[r["idtag"]] += 1
