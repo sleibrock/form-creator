@@ -17,6 +17,7 @@ class Preferences(object):
     highlightedRectangleBorder = wx.GREEN
     displayRectangleBorder = wx.RED
     inactiveRectangleBorder = wx.BLUE
+    errorRectangleBorder = wx.RED
     noImgText = "Load an image to process"
     welcomeMessage = "Welcome to Form Creator!"
     noRmapFound = "No RMAP data found, starting from scratch"
@@ -31,7 +32,7 @@ class Preferences(object):
     deletingAllRects = "Deleting all rects! (Careful!)"
     filterRects = "Filtering bad rectangles"
     cleanRects = "Cleaning up rects with no names"
-    statisticalData = "{0} Total Rectangles\n{1} Text Rects\n{2} Check Rects\n{3} Radio Rects"
+    statisticalData = "{0} Total Rectangles\n{1} Text Rects\n{2} Check Rects\n{3} Radio Rects\n{4} Names tagged"
     aboutAppInstructions = ["Open up an image, left click to drag rectangles",
                             "Right click to pan around the image",
                             "Middle click to delete a selected rectangle",
@@ -56,7 +57,6 @@ class View(wx.Panel):
         self.leftclick = False
         self.rightclick = False
         self.middleclick = False
-
         self.rects = []  # the rectangle storage
         self.image = None  # The bitmap variable
         self.init_click = (0, 0)
@@ -109,18 +109,17 @@ class View(wx.Panel):
         x, y = pos
         for R in self.rects:
             rx, ry, rw, rh = R.x + self.offsetx, R.y + self.offsety, R.w, R.h
-            if all([x >= rx, x <= rx + rw]):
-                if all([y >= ry, y <= ry + rh]):
-                    return R  # means it clicked a rectangle
+            if all([x >= rx, x <= rx + rw, y >= ry, y <= ry + rh]):
+                return R  # means it clicked a rectangle
         return None  # return none otherwise
 
     def colliderects(self, rect):
         """
         Check if *rect collides with any other rect in rect list
         """
-        x1, y1, w1, h1 = rect.__iter__()[:4]
+        x1, y1, w1, h1 = rect.data
         for R in self.rects:
-            x2, y2, w2, h2 = R.__iter__()[:4]
+            x2, y2, w2, h2 = R.data
             x2 += self.offsetx
             y2 += self.offsety
             if all([x1 < x2 + w2,  x1+w1 > x2, y1 < y2+h2, y1+h1 > y2]):
@@ -130,11 +129,12 @@ class View(wx.Panel):
     def deleteselectedrect(self):
         """
         Delete currently selected rectangle
+        You can't remove while iterating through (at least you shouldn't)
         """
         removal = None
         if self.selrect is not None:
             for i, R in enumerate(self.rects):
-                if R.data is self.selrect.data:
+                if R.data == self.selrect.data:
                     removal = i
             self.selrect = None
             if removal is not None:
@@ -147,7 +147,7 @@ class View(wx.Panel):
         """
         Delete all rects (shouldn't be very useful)
         """
-        self.rects = []
+        self.rects = list()
 
     def applytype(self, typerect):
         """Apply the type to the current selected rect"""
@@ -161,14 +161,13 @@ class View(wx.Panel):
 
     def read_json(self, json):
         """
-        Read the json loads data, convert to Rects
+        Read the json.loads data, convert to Rects
         """
         for i, k in json.items():
             print("{0} - {1}".format(i, k))
             data = (k["x"], k["y"], k["w"], k["h"], k["idtag"], k["typerect"])
             rect_addition = Rect(*data)
             self.rects.append(rect_addition)
-        pass
 
     def clear_all(self):
         """Clear all data from the view (basically emptying it out"""
@@ -199,7 +198,8 @@ class View(wx.Panel):
         t = len([string for string in types if string == "text"])
         c = len([string for string in types if string == "checkbox"])
         r = len([string for string in types if string == "radio"])
-        return tuple((s, t, c, r))
+        n = len([nametag for nametag in self.rects if nametag.idtag != ""])
+        return tuple((s, t, c, r, n))
 
     ###########################################  Event handler basic functions
     def motion(self, event):
@@ -278,6 +278,7 @@ class View(wx.Panel):
         self.middleclick = True
 
     def midup(self, event):
+        """Delete a rectangle"""
         event.Skip()
         self.middleclick = False
         if self.selrect is not None:

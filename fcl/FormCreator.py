@@ -175,7 +175,7 @@ class FormCreator(wx.Frame):
             fd = self.img.split(".")
             fd.pop()
             fname = ".".join(fd)
-            self.write_html_printpage(fname + ".print.html", rmap_data, json_data)
+            self.write_html_printpage(fname, rmap_data, json_data)
         else:
             self.SetStatusText(Preferences.noImageLoaded)
 
@@ -228,7 +228,7 @@ class FormCreator(wx.Frame):
     def write_html_rmap(filepath, rmap_data, new_fname=""):
         """HTML and RMAP export code"""
         with open(filepath+".rmap", "w") as F:  # dump the JSON RMAP
-            F.write(dumps(rmap_data, sort_keys=True, indent=4, separators=(',', ': ')))
+            F.write(FormCreator.export_json(rmap_data))
         with open(join(Preferences.staticFolder, Preferences.SkeletonFile), "r") as f:  # read skeleton file
             skeletal_data = f.read()
         with open(filepath+".html", "w") as f:  # write the HTML/css file
@@ -259,12 +259,14 @@ class FormCreator(wx.Frame):
     def write_html_printpage(filepath, rmap_data, json_data):
         """For future use in writing data to an HTML page (similar code as write_html_rmap)"""
         # TODO: data test writing to an HTML print page
+        # TODO: fix RectData.Rect to store a "value" attribute
         with open(join(Preferences.staticFolder, Preferences.SkeletonFile), "r") as f:
             skeletal_data = f.read()
         with open(filepath+".print.html", "w") as f:
             css = ".sourceImage{z-index:-1;}\n"
             html = "<img src=\"{0}\" class=\"sourceImage\" />\n"
             for key, r in rmap_data.items():
+                print(json_data[r["idtag"]])
                 css += "."+key+"{position:absolute;top:"+str(r["y"]+10)+"px;left:"+str(r["x"]+10)+"px;}\n"
                 if r["typerect"] == "text" and r["idtag"].strip() != "":
                     html = "<p class=\"\">{0}</p>".format("Hello")
@@ -273,6 +275,11 @@ class FormCreator(wx.Frame):
                     # we need json info if the field was selected
                     pass
             f.write(skeletal_data.format(css, html))
+
+    @staticmethod
+    def export_json(data):
+        """Export JSON etc"""
+        return dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
 
     def on_test(self, event):
         """
@@ -321,8 +328,8 @@ class FormCreator(wx.Frame):
         """Statistical count data for the current view"""
         event.Skip()
         if self.v.image is not None:
-            s, t, c, r = self.v.statistics()
-            dlg = wx.MessageDialog(self, Preferences.statisticalData.format(s, t, c, r), "Statistics", wx.OK)
+            s, t, c, r, n = self.v.statistics()
+            dlg = wx.MessageDialog(self, Preferences.statisticalData.format(s, t, c, r, n), "Statistics", wx.OK)
             dlg.ShowModal()
             dlg.Destroy()
         else:
