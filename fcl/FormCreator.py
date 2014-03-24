@@ -248,8 +248,14 @@ class FormCreator(wx.Frame):
                     html += i.format(key, r["w"]/text_size_divider, r["idtag"])
                 elif r["idtag"].strip() != "":  # don't add rects without tags
                     # TODO: add a case for radios/checkboxes to add value incrementing for tags with shared names
-                    i = "<input type=\"{0}\" class=\"{1}\" name=\"{2}\" id=\"{2}\" />\n"
-                    html += i.format(r["typerect"], key, r["idtag"])
+                    if r["idtag"] in grouped_boxes:
+                        value = grouped_boxes[r["idtag"]]
+                        grouped_boxes[r["idtag"]] += 1
+                    else:
+                        value = 0
+                        grouped_boxes[r["idtag"]] = 1
+                    i = "<input type=\"{0}\" class=\"{1}\" name=\"{2}\" id=\"{2}\" value=\"{3}\" />\n"
+                    html += i.format(r["typerect"], key, r["idtag"], value)
             f.write(skeletal_data.format(page_title, css, html))
 
     @staticmethod
