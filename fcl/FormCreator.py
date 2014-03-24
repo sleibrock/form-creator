@@ -68,6 +68,7 @@ class FormCreator(wx.Frame):
         savebutton = fmenu.Append(wx.ID_SAVE, "Save", "Save your work")
         closebutton = fmenu.Append(wx.ID_CLOSE, "Close", "Close an image mapping")
         exportbutton = fmenu.Append(wx.ID_ADD, "Export", "Export to a print page")
+        printbutton = fmenu.Append(wx.ID_BOLD, "Print", "Print all rectangles to text")
         fmenu.AppendSeparator()
         aboutbutton = fmenu.Append(wx.ID_ABOUT, "About", "Info on this program")
         statsbutton = fmenu.Append(wx.ID_STATIC, "Stats", "Statistical data on the view")
@@ -92,6 +93,7 @@ class FormCreator(wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_open, openbutton)
         self.Bind(wx.EVT_MENU, self.on_save, savebutton)
         self.Bind(wx.EVT_MENU, self.on_close, closebutton)
+        self.Bind(wx.EVT_MENU, self.on_print, printbutton)
         self.Bind(wx.EVT_MENU, self.export_print_page, exportbutton)
         self.Bind(wx.EVT_MENU, self.on_about, aboutbutton)
         self.Bind(wx.EVT_MENU, self.on_stats, statsbutton)
@@ -111,6 +113,13 @@ class FormCreator(wx.Frame):
         event.Skip()
         if self.v.image is not None:
             self.v.applyname(self.idtext.Value)
+
+    def on_print(self, event):
+        """Print button for debugging"""
+        event.Skip()
+        if self.v is not None:
+            for r in self.v.rects:
+                print("{0} : {1} - {2}".format(r.idtag, r.typerect, r.data))
 
     def on_open(self, event):
         """
