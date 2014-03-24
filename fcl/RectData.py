@@ -14,3 +14,6 @@ class Rect(object):
 
     def __iter__(self):
         return self.data
+
+    def collide(self, rect):
+        pass
