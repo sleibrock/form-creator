@@ -150,7 +150,7 @@ class View(wx.Panel):
         """
         for i, k in json.items():
             print("{0} - {1}".format(i, k))
-            data = (k["x"], k["y"], k["w"], k["h"], k["idtag"], k["typerect"])
+            data = (k["x"], k["y"], k["w"], k["h"], k["idtag"], k["typerect"], k["value"])
             rect_addition = Rect(*data)
             self.rects.append(rect_addition)
 
