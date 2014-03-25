@@ -26,7 +26,11 @@ class Rect(object):
 
     def collide(self, rect):
         """Collision code"""
-        pass
+        x1, y1, w1, h1 = self.data
+        x2, y2, w2, h2 = rect.data
+        if all([x1 < x2 + w2,  x1+w1 > x2, y1 < y2+h2, y1+h1 > y2]):
+                return True
+        return False
 
 #class TestRect(unittest.TestCase):
     #"""Unit case for Rect class"""
@@ -63,14 +67,12 @@ class RedrawColls(wx.Frame):
         self.add_recs(x)
         combos = combinations(self.recs, 2)
 
-        for pair in combos:
-            if pair[0].collide(pair[1]):
+        for a, b in combos:
+            if a.collide(b[1]):
 
-                self.collrecs.append(pair[0])
-                self.collrecs.append(pair[1])
+                self.collrecs.append(a)
+                self.collrecs.append(b)
                 #self.collrecs.append([pair[0], pair[1]])
-
-
                 #self.assertTrue(pair[0].collide(pair[1]))
 
     def disp_collisions(self):

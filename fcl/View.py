@@ -185,7 +185,7 @@ class View(wx.Panel):
     def statistics(self):
         """
         Return statistics of the current View
-        (total # of rects, # of text rects, # of checks, # radios)
+        (total # of rects, # of text rects, # of checks, # radios, # of named)
         """
         # Redundant code to avoid using if-statements (they're boring)
         types = [rect.typerect for rect in self.rects]

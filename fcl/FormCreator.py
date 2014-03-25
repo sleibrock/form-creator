@@ -167,7 +167,6 @@ class FormCreator(wx.Frame):
             else:
                 self.SetStatusText(Preferences.failedToOpen)
                 return False
-
             rmap_data = self.view.rects
             try:
                 with open(join(dirname, filename), "r") as f:
@@ -178,7 +177,6 @@ class FormCreator(wx.Frame):
             fd = self.img.split(".")
             fd.pop()
             fname = ".".join(fd)
-
             rmap_data = View.filter_list(rmap_data)
             rmap_data = View.clean_list(rmap_data)
             rmap_data = View.generate_data(rmap_data)
