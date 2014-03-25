@@ -5,10 +5,11 @@ __author__ = 'Steven'
 from os.path import join, isfile
 from os import mkdir, rename
 from shutil import copy
-import wx
-from View import View, Preferences
 from json import loads, dumps
-# TODO: make a popup window showing text data of all rects
+import wx
+from View import View
+from Preferences import Preferences
+# TODO: make a popup window showing text data of all rects?
 
 
 class FormCreator(wx.Frame):
@@ -30,7 +31,7 @@ class FormCreator(wx.Frame):
         bp.SetMinSize([self.w, self.h])  # set the min size of the window
 
         # Add the canvas for rectangular mapping
-        self.v = View(self)
+        self.view = View(self)
         self.idtext = wx.TextCtrl(self, 33)
         self.applybutton = wx.Button(self, -1, " Apply ")
         self.filename = ""
@@ -52,7 +53,7 @@ class FormCreator(wx.Frame):
         panelsizer.Add(self.listbox, 2, wx.EXPAND)
 
         # Start doing sizers
-        bp.Add(self.v, 1, wx.EXPAND)
+        bp.Add(self.view, 1, wx.EXPAND)
         bp.Add(panelsizer, 0, wx.BOTTOM | wx.EXPAND)
         self.SetSizer(bp)
         self.SetAutoLayout(1)
@@ -111,14 +112,14 @@ class FormCreator(wx.Frame):
         Set the text being typed to the rectangle's name
         """
         event.Skip()
-        if self.v.image is not None:
-            self.v.applyname(self.idtext.Value)
+        if self.view.image is not None:
+            self.view.applyname(self.idtext.Value)
 
     def on_print(self, event):
         """Print button for debugging"""
         event.Skip()
-        if self.v is not None:
-            for r in self.v.rects:
+        if self.view is not None:
+            for r in self.view.rects:
                 print("{0} : {1} - {2}".format(r.idtag, r.typerect, r.data))
 
     def on_open(self, event):
@@ -132,9 +133,9 @@ class FormCreator(wx.Frame):
             self.filename = dlg.GetFilename()
             dirname = dlg.GetDirectory()
             self.img = join(dirname, self.filename)
-            self.v.image = wx.Bitmap(self.img, type=wx.BITMAP_TYPE_ANY)
-            self.v.rects = []
-            self.v.Refresh()  # trigger onpaint
+            self.view.image = wx.Bitmap(self.img, type=wx.BITMAP_TYPE_ANY)
+            self.view.rects = []
+            self.view.Refresh()  # trigger onpaint
             self.SetTitle("Form Creator : " + self.img)
 
             # Read for an RMAP file
@@ -146,7 +147,7 @@ class FormCreator(wx.Frame):
                 # the file is here!
                 with open(rmap_file, "r") as f:
                     rmap_rects = loads(f.read())
-                    self.v.read_json(rmap_rects)
+                    self.view.read_json(rmap_rects)
                     self.rmap_loaded = True
                 self.SetStatusText(Preferences.RmapFound)
             else:
@@ -156,8 +157,7 @@ class FormCreator(wx.Frame):
 
     def export_print_page(self, event):
         event.Skip()
-        # TODO: write a file dialog to create a printable HTML page and export data
-        if self.v.image is not None:
+        if self.view.image is not None:
             # We don't require an RMAP file, just rect data that we can generate
             dlg = wx.FileDialog(self, "Choose a JSON file to load", "", "", "", wx.SAVE)
             if dlg.ShowModal() == wx.ID_OK:
@@ -168,13 +168,11 @@ class FormCreator(wx.Frame):
                 self.SetStatusText(Preferences.failedToOpen)
                 return False
 
-            rmap_data = self.v.rects
+            rmap_data = self.view.rects
             try:
                 with open(join(dirname, filename), "r") as f:
                     json_data = loads(f.read())
             except Exception as e:
-                print("Error: {0}".format(str(e)))
-                print("Not a valid JSON format")
                 self.SetStatusText(Preferences.failedToExport)
                 return False
             fd = self.img.split(".")
@@ -195,8 +193,8 @@ class FormCreator(wx.Frame):
         and also a new readable JSON format (called .RMAP)
         """
         event.Skip()
-        if self.v.image is not None:
-            rmap_data = self.v.generate_rmap()
+        if self.view.image is not None:
+            rmap_data = self.view.generate_rmap()
 
             if self.rmap_loaded:  # this means we previously had an RMAP file loaded, so save to that
                 # Use self.img as the main determiner
@@ -275,7 +273,6 @@ class FormCreator(wx.Frame):
             css = ".sourceImage{z-index:-1;}\n"
             html = "<img src=\"{0}\" class=\"sourceImage\" />\n".format(iname)
             for key, r in rmap_data.items():
-                print("{0} -- {1}".format(key, json_data[r["idtag"]]))
                 css += "."+key+"{position:absolute;top:"+str(r["y"]+10)+"px;left:"+str(r["x"]+10)+"px;}\n"
                 if r["typerect"] == "text" and r["idtag"].strip() != "":
                     print(r)
@@ -291,40 +288,32 @@ class FormCreator(wx.Frame):
         """Export JSON etc"""
         return dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
 
-    def on_test(self, event):
-        """
-        Testing function on the menu
-        Do any unit tests here
-        """
-        event.Skip()
-        pass
-
     def on_close(self, event):
         """Close the image and remove excess data from the viewer"""
         event.Skip()
         self.img = ""
-        self.v.clear_all()
+        self.view.clear_all()
         self.rmap_loaded = False
 
     def on_selection(self, event):
         """Apply the selection from listbox to the rectangle selected (if any)"""
         event.Skip()
         n = self.listitems[self.listbox.GetSelection()]
-        if self.v.image is not None:
-            self.v.applytype(n)
+        if self.view.image is not None:
+            self.view.applytype(n)
 
     def filter(self, event):
         """Filter any bad rectangles from the buffer"""
         event.Skip()
-        if self.v.image is not None:
-            self.v.filter_rects()
+        if self.view.image is not None:
+            self.view.filter_rects()
             self.SetStatusText(Preferences.filterRects)
 
     def cleanup(self, event):
         """Cleaning function"""
         event.Skip()
-        if self.v.image is not None:
-            self.v.cleanup()
+        if self.view.image is not None:
+            self.view.cleanup()
             self.SetStatusText(Preferences.cleanRects)
 
     def on_about(self, event):
@@ -337,8 +326,8 @@ class FormCreator(wx.Frame):
     def on_stats(self, event):
         """Statistical count data for the current view"""
         event.Skip()
-        if self.v.image is not None:
-            s, t, c, r, n = self.v.statistics()
+        if self.view.image is not None:
+            s, t, c, r, n = self.view.statistics()
             dlg = wx.MessageDialog(self, Preferences.statisticalData.format(s, t, c, r, n), "Statistics", wx.OK)
             dlg.ShowModal()
             dlg.Destroy()
@@ -348,21 +337,21 @@ class FormCreator(wx.Frame):
     def on_exit(self, event):
         """Exit the program"""
         event.Skip()
-        self.v.clear_all()
+        self.view.clear_all()
         self.Close(True)  # close program
 
     def on_delete(self, event):
         """Delete selected rect"""
         event.Skip()
-        if self.v.image is not None:
-            self.v.deleteselectedrect()
+        if self.view.image is not None:
+            self.view.deleteselectedrect()
             self.SetStatusText(Preferences.deletingRect)
 
     def del_all(self, event):
         """Delete all rects"""
         event.Skip()
-        if self.v.image is not None:
-            self.v.deleteallrects()
+        if self.view.image is not None:
+            self.view.deleteallrects()
             self.SetStatusText(Preferences.deletingAllRects)
 
     def set_type(self, text):
@@ -372,6 +361,6 @@ class FormCreator(wx.Frame):
     def apply_name(self, event):
         """Apply the text to the rectangle"""
         event.Skip()
-        if self.v.image is not None:
-            self.v.applyname(self.idtext.Value)
+        if self.view.image is not None:
+            self.view.applyname(self.idtext.Value)
 #end

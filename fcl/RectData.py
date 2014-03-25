@@ -4,9 +4,9 @@ __author__ = 'Steven'
 
 #import unittest
 import random
-import wx
 from itertools import combinations
 
+import wx
 
 
 class Rect(object):
