@@ -194,6 +194,7 @@ class FormCreator(wx.Frame):
         """
         event.Skip()
         if self.view.image is not None:
+            self.view.update_values()
             rmap_data = self.view.generate_rmap()
 
             if self.rmap_loaded:  # this means we previously had an RMAP file loaded, so save to that
@@ -252,21 +253,14 @@ class FormCreator(wx.Frame):
                     i = "<input type=\"text\" class=\"{0}\" size=\"{1}\" name=\"{2}\" id=\"{2}\" />\n"
                     html += i.format(key, r["w"]/text_size_divider, r["idtag"])
                 elif r["idtag"].strip() != "":  # don't add rects without tags
-                    if r["idtag"] in grouped_boxes:
-                        value = grouped_boxes[r["idtag"]]
-                        grouped_boxes[r["idtag"]] += 1
-                    else:
-                        value = 0
-                        grouped_boxes[r["idtag"]] = 1
                     i = "<input type=\"{0}\" class=\"{1}\" name=\"{2}\" id=\"{2}\" value=\"{3}\" />\n"
-                    html += i.format(r["typerect"], key, r["idtag"], value)
+                    html += i.format(r["typerect"], key, r["idtag"], r["value"])
             f.write(skeletal_data.format(page_title, css, html))
 
     @staticmethod
     def write_html_printpage(iname, filepath, rmap_data, json_data):
         """For future use in writing data to an HTML page (similar code as write_html_rmap)"""
         # TODO: data test writing to an HTML print page
-        # TODO: fix RectData.Rect to store a "value" attribute
         with open(join(Preferences.staticFolder, Preferences.SkeletonFile), "r") as f:
             skeletal_data = f.read()
         with open(filepath+".print.html", "w") as f:

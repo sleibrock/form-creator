@@ -31,7 +31,8 @@ class View(wx.Panel):
         self.leftclick_topleft = (0, 0)
         self.leftclick_botright = (0, 0)
         self.displayrect = False  # mouse drag rect
-        self.selrect = None  # selected rect
+        self.selrect = None  # selected rect'
+        self.valuedict = {}
 
         # bindings
         self.Bind(wx.EVT_SIZE, self.on_size)
@@ -130,6 +131,18 @@ class View(wx.Panel):
         """Apply the name to the current selected rect"""
         if self.selrect is not None:
             self.selrect.idtag = name
+
+    def update_values(self):
+        """Add values to multiple input types"""
+        values = {}
+        for rect in self.rects:
+            if rect.typerect in ("checkbox", "radio"):
+                if rect.idtag in values:
+                    rect.value = values[rect.idtag]
+                    values[rect.idtag] += 1
+                else:
+                    rect.value = 0
+                    values[rect.idtag] = 1
 
     def read_json(self, json):
         """
