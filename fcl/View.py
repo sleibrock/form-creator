@@ -13,14 +13,12 @@ class View(wx.Panel):
     Blits an image onto the screen and allows you to draw rectangles over it
     Rect data is exported in JSON format for later use
     """
-
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
 
         # Keep track of the parent
         self.parent = parent
-
         self.leftclick = False
         self.rightclick = False
         self.middleclick = False
@@ -102,7 +100,7 @@ class View(wx.Panel):
     def deleteselectedrect(self):
         """
         Delete currently selected rectangle
-        You can't remove while iterating through (at least you shouldn't)
+        We don't have a __cmp__ for Rects so use another deletion method
         """
         removal = None
         if self.selrect is not None:
