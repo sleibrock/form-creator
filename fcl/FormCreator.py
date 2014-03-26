@@ -239,19 +239,19 @@ class FormCreator(wx.Frame):
             skeletal_data = f.read()
         with open(filepath+".html", "w") as f:  # write the HTML/css file
             page_title = new_fname
-            css = ".sourceImage{ z-index: -1; }\n"
-            html = "<img src=\"{0}\" class=\"sourceImage\" />\n".format(new_fname)
+            css = "\t\t\t.sourceImage{ z-index: -1; }\n"
+            html = "\t\t\t<img src=\"{0}\" class=\"sourceImage\" />\n".format(new_fname)
             text_size_divider = 9  # size to divide rect width by for HTML text
             grouped_boxes = {}  # keep count of grouped radio/checks and their values
             for key, r in rmap_data.items():
                 # append CSS - horiz: off by 10px, vert: off by 10px
-                css += "."+key+"{position:absolute;top:"+str(r["y"]+10)+"px;left:"+str(r["x"]+10)+"px;}\n"
+                css += "\t\t\t."+key+"{position:absolute;top:"+str(r["y"]+10)+"px;left:"+str(r["x"]+10)+"px;}\n"
                 # append HTML
                 if r["typerect"] == "text" and r["idtag"].strip() != "":
-                    i = "<input type=\"text\" class=\"{0}\" size=\"{1}\" name=\"{2}\" id=\"{2}\" />\n"
+                    i = "\t\t\t<input type=\"text\" class=\"{0}\" size=\"{1}\" name=\"{2}\" id=\"{2}\" />\n"
                     html += i.format(key, r["w"]/text_size_divider, r["idtag"])
                 elif r["idtag"].strip() != "":  # don't add rects without tags
-                    i = "<input type=\"{0}\" class=\"{1}\" name=\"{2}\" id=\"{2}\" value=\"{3}\" />\n"
+                    i = "\t\t\t<input type=\"{0}\" class=\"{1}\" name=\"{2}\" id=\"{2}\" value=\"{3}\" />\n"
                     html += i.format(r["typerect"], key, r["idtag"], r["value"])
             f.write(skeletal_data.format(page_title, css, html))
 

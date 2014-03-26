@@ -2,7 +2,9 @@
     <head>
         <title>Instruction Set for Form Conversions</title>
         <style>
-
+            p {
+                width: 800px;
+            }
         </style>
     </head>
     <body>
@@ -11,7 +13,7 @@
         <h2>Requirements</h2>
         <p>Make sure you have the following installed:</p>
         <ul>
-            <li>Python 2.7.x</li>
+            <li><a href="https://python.org/">Python</a> 2.7.x</li>
             <li>Photoshop, or another Image Editing program (GIMP)</li>
             <li>ImageMagick / GhostScript</li>
             <li>wxPython</li>
@@ -20,6 +22,120 @@
         </ul>
 
         <h2>Description of Task</h2>
-        <p>To be finished</p>
+        <p>The objective is to take government issue Medicaid forms and turn them into usable HTML web pages with form input fields.
+        To do this, we use the software Form Creator. It allows you to choose sections which will add input fields over an image,
+        then save the file to an HTML page to be used on the web, with all name/ID tagging done automatically.</p>
+
+        <p>The software includes features used in creating web pages as well as a few ways of editing the form to prevent mistakes.</p>
+
+        <h3>Form Creator requirements</h3>
+
+        <p>Form Creator was created using Python with the wxPython library on a Windows operating system. The wxPython library extends
+        to operating systems like OSX and Linux, but have not been tested fully. To install both Python and wxPython, just go to their
+        web pages and obtain the respective download files pertaining to your system.</p>
+
+        <h2>Stesp for Conversion</h2>
+
+        <h3>Obtaining the PDFs</h3>
+
+        <p>First you have to obtain the forms required for Medicaid. You have to search by state using keyword searches and find
+        a PDF download (or other format like Word), then continue to download it.</p>
+
+
+        <h3>Converting to PNG format</h3>
+
+        <p>The most appropriate web graphic format is PNG. JPEG is acceptable too, but PNG has the overall highest quality.
+        The next step is to converting an entire PDF into PNG format. To do this we can use ImageMagick and GhostScript.
+        GhostScript comes with a tool called "convert.exe", which we will use to batch-convert the PDF into several images.</p>
+
+        <p>Drag the PDF into a new folder, open up a terminal, then punch in this command: (Windows only)</p>
+
+        <p style="font-family:courier;">convert -density 300 pdf-to-convert.pdf pdf-to-convert.png</p>
+
+        <p>and this will start converting the PDF into several PNG files with a DPI (dots per inch) of 300. This process takes a while
+        based on the CPU of the computer, so just wait. Optionally, find all forms and convert them in one go.</p>
+
+        <p>Afterwards, you have to ensure that the image has a fair size in form creation. The recommended width for veritcal
+        forms is 1600 pixels wide, while the recommended width for horizontal forms is 2100 pixels wide. Use an image editing
+        program to do this part.</p>
+
+        <p>Additionally, some images may require minor editing as the convert.exe tool isn't always accurate. Sometimes you will
+        get a lot of extra blank space that needs to get cropped, so be prepared to use a Crop tool to clean the image.</p>
+
+        <h3>Using Form Creator</h3>
+
+        <p>Launch Form Creator, and you'll be brought to a window. Click on the top bar to explore several program options.</p>
+            <ul>
+                <li>File</li>
+                <ul>
+                    <li>Open - Open up an image to start working on</li>
+                    <li>Save - Save the file and it's metadata to HTML</li>
+                    <li>Close - Close the file buffer wihout saving</li>
+                    <li>Export - Load a JSON file to export the data to HTML (developer only)</li>
+                    <li>Print - Print information to a separate window as plaintext (not done)</li>
+                    <li>About - Basic information about the program</li>
+                    <li>Stats - Statistics of the current loaded file</li>
+                    <li>Exit - Exit the program without saving any progress</li>
+                </ul>
+                <li>Edit</li>
+                    <ul>
+                        <li>Filter - Delete data too small to be usable</li>
+                        <li>Clean - Delete data that was not tagged properly</li>
+                        <li>Delete - Delete current selection (mouse shortcut is middle click)</li>
+                        <li>Delete All - Delete all items (dangerous, no Undo)</li>
+                    </ul>
+            </ul>
+        <p>When saving an image, you will choose a file name, and the program will create a separate directory for it with three files.</p>
+        <ul>
+            <li>The original image used in the application</li>
+            <li>The new HTML file with a form to be used on the web</li>
+            <li>Metadata regarding the layout of the form (called an RMAP file)</li>
+        </ul>
+        <p>An RMAP file (or rectangular mapping file) is layout data generated from your work in the program. When you open up previous
+        work on forms, it will look for an RMAP file to generate your work. When saving to an HTML page, the program will use the RMAP
+        data to create a web layout automatically using CSS positioning (if you inspect an HTML page, you will see a lot of CSS).</p>
+
+        <h3>Using Form Creator</h3>
+
+        <p>Load up an image, and try out these controls:</p>
+        <ul>
+            <li>Left-click to drag and create a new field</li>
+            <li>Right-click to pan around the image on the screen</li>
+            <li>Left-click on a selection to highlight it</li>
+            <li>When highlighted, use middle-click to delete and remove the field</li>
+        </ul>
+        <p>When you create fields, the next step is to applying two more things in order to make it valid:</p>
+        <ul>
+            <li>Typing in a name to give the field an ID and a Name property</li>
+            <li>Checking off what type of Field you created was</li>
+        </ul>
+        <p>By default, all fields you create have no name, and are by default a type of "text" field. Upon selection, you
+        will automatically be focused on the text window to type a name for the field, and changing the type of field is just one click.
+        The type of field can either be "text", "checkbox", or "radio" as seen in the lower-right corner. Just press on one of the text items
+        to change what your field selection is.</p>
+
+        <h3>Name/ID Text Formatting</h3>
+        <p>When doing nametagging, it is well advised you follow a certain format when naming fields.</p>
+        <p>Let's say for exmaple, we are creating a field over something for a "First Name", so in the name box, you should type in
+        "firstName". By standard we use lowercases for first letters, and when a second word comes in we start using capitalization. Examples:</p>
+        <ul>
+            <li>"Home Address" should be "homeAddress"</li>
+            <li>"Mailing City" should be "mailingCity"</li>
+            <li>"E-mail Address" should be "emailAddress"</li>
+        </ul>
+
+        <p>Try to avoid using special characters !@#$%^&*(){}[]-=+_,./?";': and stick to using plaintext lowercase and uppercase.</p>
+        <p>There are some special cases where we can't use one field to cover all data. Social Security fields are often put into three
+        separate fields, so you must create three separate fields for Social Security. In this case, we can use our own naming
+        format for this situation. When naming the three different fields, call them "socialFirst"
+        "socialMiddle", and "socialLast"</p>
+        <p>Another thing is when the form associates certain fields to another individual, or a person who's information differs from the one
+        filling out the form, such as another person who lives in the household of the individual. In this case, we need to assert who the person
+        is in regards to the main individual. To do this we can use "othersPerson" in front of all names. Example if we have say Other Person 2:</p>
+        <ul>
+            <li>Other Person 2's Last Name is now "otherPerson2LastName"</li>
+            <li>Other Person 2's first phone number digits is now "otherPerson2phoneFirst"</li>
+            <li>Other Person 2's last social digits is now "otherPerson2socialLast"</li>
+        </ul>
     </body>
 </html>
