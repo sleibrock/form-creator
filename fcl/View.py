@@ -251,12 +251,13 @@ class View(wx.Panel):
             x2, y2 = self.leftclick_botright[0] - self.offsetx, self.leftclick_botright[1] - self.offsety
             r = Rect(*self.createrect((x, y), (x2, y2)))
             if not self.colliderects(r):
+                # TODO: Fix the issue with Rectangle collisions (this is taking too long)
                 self.rects.append(r)
+                self.selrect = r  # upon creation of a rect, set focus to text
+                self.parent.set_type(r.typerect)
+                self.parent.idtext.SetValue(r.idtag)
+                self.parent.idtext.SetFocus()
             self.displayrect = False
-            self.selrect = r  # upon creation of a rect, set focus to text
-            self.parent.set_type(r.typerect)
-            self.parent.idtext.SetValue(r.idtag)
-            self.parent.idtext.SetFocus()
         self.Refresh()
 
     def rightdown(self, event):
