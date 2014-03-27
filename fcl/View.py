@@ -231,6 +231,8 @@ class View(wx.Panel):
             self.parent.set_type(r.typerect)
             self.parent.idtext.SetValue(r.idtag)
             self.parent.idtext.SetFocus()
+            self.parent.idtext.SetInsertionPointEnd()
+            self.parent.idtext.SelectAll()
         else:
             # draw a new rectangle
             self.selrect = None
@@ -251,6 +253,10 @@ class View(wx.Panel):
             if not self.colliderects(r):
                 self.rects.append(r)
             self.displayrect = False
+            self.selrect = r  # upon creation of a rect, set focus to text
+            self.parent.set_type(r.typerect)
+            self.parent.idtext.SetValue(r.idtag)
+            self.parent.idtext.SetFocus()
         self.Refresh()
 
     def rightdown(self, event):
