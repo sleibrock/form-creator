@@ -22,6 +22,7 @@ class View(wx.Panel):
         self.leftclick = False
         self.rightclick = False
         self.middleclick = False
+        self.ctrldown = False
         self.rects = []  # the rectangle storage
         self.image = None  # The bitmap variable
         self.init_click = (0, 0)
@@ -31,6 +32,7 @@ class View(wx.Panel):
         self.displayrect = False  # mouse drag rect
         self.selrect = None  # selected rect'
         self.valuedict = {}
+        self.selectedrects = []
 
         # bindings
         self.Bind(wx.EVT_SIZE, self.on_size)
@@ -91,8 +93,6 @@ class View(wx.Panel):
         x1, y1, w1, h1 = rect.data
         for R in self.rects:
             x2, y2, w2, h2 = R.data
-            x2 += self.offsetx
-            y2 += self.offsety
             if all([x1 < x2 + w2,  x1+w1 > x2, y1 < y2+h2, y1+h1 > y2]):
                 return True
         return False
@@ -121,14 +121,20 @@ class View(wx.Panel):
         self.rects = list()
 
     def applytype(self, typerect):
-        """Apply the type to the current selected rect"""
+        """Apply the type to the current selected rect(s)"""
         if self.selrect is not None:
             self.selrect.typerect = typerect
+        if len(self.selectedrects):
+            for r in self.selectedrects:
+                r.typerect = typerect
 
     def applyname(self, name):
-        """Apply the name to the current selected rect"""
+        """Apply the name to the current selected rect(s)"""
         if self.selrect is not None:
             self.selrect.idtag = name
+        if len(self.selectedrects):
+            for i, r in enumerate(self.selectedrects):
+                r.idtag = name + str(i+1)
 
     def update_values(self):
         """Add values to multiple input types"""
@@ -225,6 +231,7 @@ class View(wx.Panel):
         self.leftclick_topleft = pos
         self.leftclick_botright = pos  # fix minor issue to double-clicking
         r = self.colliderectpos(pos)
+        self.selectedrects = []
         if r is not None:
             # grab the rect that was clicked
             self.selrect = r
@@ -251,20 +258,32 @@ class View(wx.Panel):
             x2, y2 = self.leftclick_botright[0] - self.offsetx, self.leftclick_botright[1] - self.offsety
             r = Rect(*self.createrect((x, y), (x2, y2)))
             if not self.colliderects(r):
-                # TODO: Fix the issue with Rectangle collisions (this is taking too long)
                 self.rects.append(r)
                 self.selrect = r  # upon creation of a rect, set focus to text
                 self.parent.set_type(r.typerect)
                 self.parent.idtext.SetValue(r.idtag)
                 self.parent.idtext.SetFocus()
+            else:
+                # don't use the rectangle we just made
+                pass
             self.displayrect = False
         self.Refresh()
 
     def rightdown(self, event):
+        # TODO: Add the ability to select multiple rectangles
         event.Skip()
-        self.rightclick = True
-        self.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
-        self.init_click = event.GetPosition()
+        pos = event.GetPosition()
+        r = self.colliderectpos(pos)
+        if r is not None:
+            # add the rect that was clicked to the rect group
+            self.selrect = None
+            self.selectedrects.append(r)
+        else:
+            # go back to normal panning controls
+            self.rightclick = True
+            self.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
+            self.init_click = event.GetPosition()
+        self.Refresh()
 
     def rightup(self, event):
         event.Skip()
@@ -314,6 +333,10 @@ class View(wx.Panel):
                 dc.SetPen(wx.Pen(Preferences.highlightedRectangleBorder, 1, style=wx.SOLID))
                 dc.DrawRectangle(self.selrect.x + self.offsetx, self.selrect.y + self.offsety,
                                  self.selrect.w, self.selrect.h)
+            if len(self.selectedrects):
+                dc.SetPen(wx.Pen(Preferences.highlightedRectangleBorder, 2, style=wx.DOT_DASH))
+                for r in self.selectedrects:
+                    dc.DrawRectangle(r.x + self.offsetx, r.y + self.offsety, r.w, r.h)
         else:
             dc.SetPen(wx.Pen(wx.BLACK, 5))
             n = len(Preferences.noImgText) * 5

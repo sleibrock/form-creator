@@ -90,6 +90,8 @@ class FormCreator(wx.Frame):
         self.SetMenuBar(mb)
         self.Show(True)
 
+        self.view.SetFocus()
+
         # Bindings
         self.Bind(wx.EVT_MENU, self.on_open, openbutton)
         self.Bind(wx.EVT_MENU, self.on_save, savebutton)

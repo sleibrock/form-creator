@@ -11,7 +11,7 @@ class Preferences(object):
     One day this may load from a JSON file for customization
     Stores strings to use in basic messages/alerts as well
     """
-    version = "0.3"
+    version = "0.4"
     staticFolder = "static"
     SkeletonFile = "skeleton.html"
     highlightedRectangleBorder = wx.GREEN
