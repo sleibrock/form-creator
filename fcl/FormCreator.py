@@ -10,6 +10,7 @@ import wx
 from View import View
 from Preferences import Preferences
 # TODO: make a popup window showing text data of all rects?
+# TODO: fix the issue of the invisible rectangles
 
 
 class FormCreator(wx.Frame):

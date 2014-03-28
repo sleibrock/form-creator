@@ -22,7 +22,6 @@ class View(wx.Panel):
         self.leftclick = False
         self.rightclick = False
         self.middleclick = False
-        self.ctrldown = False
         self.rects = []  # the rectangle storage
         self.image = None  # The bitmap variable
         self.init_click = (0, 0)
@@ -30,7 +29,7 @@ class View(wx.Panel):
         self.leftclick_topleft = (0, 0)
         self.leftclick_botright = (0, 0)
         self.displayrect = False  # mouse drag rect
-        self.selrect = None  # selected rect'
+        self.selrect = None  # selected rect
         self.valuedict = {}
         self.selectedrects = []
 
