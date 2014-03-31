@@ -311,6 +311,7 @@ class View(wx.Panel):
         w, h = self.GetClientSize()
         dc = wx.AutoBufferedPaintDC(self)
         dc.Clear()
+        # Cause the render to draw unfilled rectangles with borders (may be root of problems)
         dc.SetBrush(wx.Brush("000000", style=wx.TRANSPARENT))
         if self.image is not None:
             # draw the new bitmap
@@ -337,6 +338,7 @@ class View(wx.Panel):
                 for r in self.selectedrects:
                     dc.DrawRectangle(r.x + self.offsetx, r.y + self.offsety, r.w, r.h)
         else:
+            #
             dc.SetPen(wx.Pen(wx.BLACK, 5))
             n = len(Preferences.noImgText) * 5
             dc.DrawText(Preferences.noImgText, (w / 2)-n, (h / 2))

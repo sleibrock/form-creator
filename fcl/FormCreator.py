@@ -20,8 +20,8 @@ class FormCreator(wx.Frame):
     """
     def __init__(self, parent, title):
         """Initializer"""
-        self.w, self.h = 800, 600
         wx.Frame.__init__(self, parent, title=title)
+        self.w, self.h = 800, 600
 
         # Basic frame information
         self.SetTitle("Form Creator " + Preferences.version)
