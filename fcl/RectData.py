@@ -35,66 +35,12 @@ class Rect(object):
                 return True
         return False
 
-#class TestRect(unittest.TestCase):
-    #"""Unit case for Rect class"""
-class RedrawColls(wx.Frame):
-    def setUp(self):
-        self.seq = range(1000)
-        self.check = 0
-        self.recs = []
-        self.collrecs = []
-
-    def create_rect(self):
-        """
-        Creates a rectangle with random placement and size.
-        :rtype : rect
-        """
-        x = random.choice(self.seq)
-        y = random.choice(self.seq)
-        w = random.choice(self.seq)
-        h = random.choice(self.seq)
-        return Rect(x, y, w, h)
-
-    def add_recs(self, x):
-        """
-        Adds a number of rectangles to 'recs' for testing.
-        :param rect:
-        """
-        for i in range(0,x,1):
-            self.recs.append(self.create_rect())
-
-    def find_collision(self, x):
-        """
-        Checks the rectangles for collisions
-        """
-        self.add_recs(x)
-        combos = combinations(self.recs, 2)
-
-        for a, b in combos:
-            if a.collide(b[1]):
-
-                self.collrecs.append(a)
-                self.collrecs.append(b)
-                #self.collrecs.append([pair[0], pair[1]])
-                #self.assertTrue(pair[0].collide(pair[1]))
-
-    def disp_collisions(self):
-        """
-        displays collisons for inspection.
-        """
-        dc = wx.AutoBufferedPaintDC(self)
-        dc.Clear()
-
-        dc.SetBrush(wx.Brush("0000FF000", style=wx.LINE))
-
-        for rec in self.collrecs:
-            dc.DrawRectangle(rec)
-
 class DataTestApp(wx.Frame):
 
     def __init__(self, parent, title):
         wx.Frame.__init__(self, parent, title=title)
         self.SetTitle(title)
+        self.SetClientSize((800,600))
         self.view = RectDraw(self)
         self.button = wx.Button(self, 1, " Run Test ")
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -103,7 +49,8 @@ class DataTestApp(wx.Frame):
         self.SetSizer(sizer)
         self.SetAutoLayout(1)
         sizer.Fit(self)
-        self.Bind(wx.EVT_BUTTON, self.button, self.on_press)
+        self.Show(True)
+        self.Bind(wx.EVT_BUTTON, self.on_press, self.button)
 
     def on_press(self, event):
         event.Skip()
@@ -114,6 +61,8 @@ class RectDraw(wx.Panel):
         wx.Panel.__init__(self, parent)
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.rects = set()
+        self.Bind(wx.EVT_PAINT, self.onpaint)
+        self.Bind(wx.EVT_SIZE, self.on_size)
 
     def on_size(self, event):
         """Refresh info when app size changes"""
@@ -122,34 +71,40 @@ class RectDraw(wx.Panel):
 
     def start_test(self):
         # create rectanlges using random numbers
+        self.rects = set()
         test_rects = []
-        for x in range(1000):
+        for x in range(100):
             x = random.randint(0, 800)
             y = random.randint(0, 800)
             w = random.randint(0, 800)
             h = random.randint(0, 800)
             test_rects.append(Rect(x, y, w, h))
 
-        combos = combinations(test_rects)
+        combos = combinations(test_rects, 2)
         for a, b in combos:
             if a.collide(b):
-                self.rects.append(a)  # shouldn't have duplicates because it's a set
-                self.rects.append(b)
+                self.rects.add(a)  # shouldn't have duplicates because it's a set
+                self.rects.add(b)
+        self.Refresh()
+        print("len(s): {0}".format(len(self.rects)))
 
     def onpaint(self, event):
         event.Skip()
+        print("painting")
         w, h = self.GetClientSize()
         dc = wx.AutoBufferedPaintDC(self)
         dc.Clear()
-        dc.SetBrush(wx.Brush("000000", style=wx.TRANSPARENT))
+        dc.SetBrush(wx.Brush(wx.BLACK))
         dc.SetPen(wx.Pen(wx.RED, 2, style=wx.SOLID))
 
         for rect in self.rects:
+            print(rect.data)
+            dc.DrawRectangle(5, 5, 20, 20)
             dc.DrawRectangle(*rect.data)
 
 
-
 if __name__ == "__main__":
-    app = wx.DataTestApp(False)
+    app = wx.App(False)
+    DataTestApp(None, "DataTest")
     app.MainLoop()
 #end
