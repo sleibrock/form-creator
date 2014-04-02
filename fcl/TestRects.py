@@ -29,6 +29,7 @@ class DataTestApp(wx.Frame):
         event.Skip()
         self.view.start_test()
 
+
 class RectDraw(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)

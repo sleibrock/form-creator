@@ -31,7 +31,7 @@ class FormCreator(wx.Frame):
         bp = wx.BoxSizer(orient=wx.VERTICAL)
         bp.SetMinSize([self.w, self.h])  # set the min size of the window
 
-        # Add the canvas for rectangular mapping
+        # Add the canvas for rectangular mappi8ng
         self.view = View(self)
         self.idtext = wx.TextCtrl(self, 33)
         self.applybutton = wx.Button(self, -1, " Apply ")
