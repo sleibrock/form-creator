@@ -9,6 +9,6 @@ __author__ = 'Steven'
 
 if __name__ == "__main__":
     app = wx.App(False)
-    FormCreator(None, "FormCreator " + Preferences.version)
+    FormCreator(None, Preferences.title)
     app.MainLoop()
 # end

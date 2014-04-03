@@ -8,10 +8,11 @@ import wx
 class Preferences(object):
     """
     Class to store application preferences
-    One day this may load from a JSON file for customization
     Stores strings to use in basic messages/alerts as well
+    Colors can use either wx.COLOR constants or "######" Hex value codes
     """
-    version = "0.4"
+    version = "1.0"
+    title = "FormCreator " + version
     staticFolder = "static"
     SkeletonFile = "skeleton.html"
     highlightedRectangleBorder = wx.GREEN

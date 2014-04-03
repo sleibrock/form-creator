@@ -14,24 +14,24 @@ class View(wx.Panel):
     Rect data is exported in JSON format for later use
     """
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent)
+        wx.Panel.__init__(self, parent)  # super
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
 
         # Keep track of the parent
-        self.parent = parent
-        self.leftclick = False
+        self.parent = parent  # parent window/frame reference
+        self.leftclick = False  # three state variables of mouse pressing
         self.rightclick = False
         self.middleclick = False
         self.rects = []  # the rectangle storage
         self.image = None  # The bitmap variable
-        self.init_click = (0, 0)
-        self.offsetx, self.offsety = (0, 0)
-        self.leftclick_topleft = (0, 0)
-        self.leftclick_botright = (0, 0)
+        self.init_click = (0, 0)  # initial click to store mouse position
+        self.offsetx, self.offsety = (0, 0)  # offset stored to transform rectangles into the viewing plane
+        self.leftclick_topleft = (0, 0)  # position stored when mouseclick is pressed
+        self.leftclick_botright = (0, 0)  # position stored when mouseclick is released
         self.displayrect = False  # mouse drag rect
         self.selrect = None  # selected rect
-        self.valuedict = {}
-        self.selectedrects = []
+        self.valuedict = {}  # dictionary used to calculate values of radios/checkboxes
+        self.selectedrects = []  # list used to store group selection of rectangles
 
         # bindings
         self.Bind(wx.EVT_SIZE, self.on_size)
@@ -80,6 +80,7 @@ class View(wx.Panel):
         """
         x, y = pos
         for R in self.rects:
+            # offset rectangle positions into proper plane
             rx, ry, rw, rh = R.x + self.offsetx, R.y + self.offsety, R.w, R.h
             if all([x >= rx, x <= rx + rw, y >= ry, y <= ry + rh]):
                 return R  # means it clicked a rectangle
@@ -91,6 +92,7 @@ class View(wx.Panel):
         """
         x1, y1, w1, h1 = rect.data
         for R in self.rects:
+            # don't use offsets here, as it was invalid
             x2, y2, w2, h2 = R.data
             if all([x1 < x2 + w2,  x1+w1 > x2, y1 < y2+h2, y1+h1 > y2]):
                 return True
@@ -100,6 +102,7 @@ class View(wx.Panel):
         """
         Delete currently selected rectangle
         We don't have a __cmp__ for Rects so use another deletion method
+        Also you shouldn't remove from a list while iterating through it
         """
         removal = None
         if self.selrect is not None:
@@ -116,11 +119,15 @@ class View(wx.Panel):
     def deleteallrects(self):
         """
         Delete all rects (shouldn't be very useful)
+        Use in emergencies
         """
         self.rects = list()
 
     def applytype(self, typerect):
-        """Apply the type to the current selected rect(s)"""
+        """
+        Apply the type to the current selected rect(s)
+        Now applies to all rectangles stored in mass selection
+        """
         if self.selrect is not None:
             self.selrect.typerect = typerect
         if len(self.selectedrects):
@@ -150,6 +157,7 @@ class View(wx.Panel):
     def read_json(self, json):
         """
         Read the json.loads data, convert to Rects
+        Keep rectangles with no ID tags to save progress/work on unnameds
         """
         for i, k in json.items():
             print("{0} - {1}".format(i, k))
@@ -158,15 +166,18 @@ class View(wx.Panel):
             self.rects.append(rect_addition)
 
     def clear_all(self):
-        """Clear all data from the view (basically emptying it out"""
+        """
+        Clear all data from the view (basically emptying it out
+        """
         self.image = None
         self.selrect = None
         self.displayrect = None
         self.offsetx, self.offsety = 0, 0
         self.rects = []
+        self.Refresh()  # redraw with onpaint
 
     @staticmethod
-    def filter_list(rects, minwidth=20, minheight=20):
+    def filter_list(rects, minwidth=10, minheight=10):
         """Static filter a list (used to not ruin stored data)"""
         filt = lambda r: all([r.w > minwidth, r.h > minheight])
         return [Rectangle for Rectangle in rects if filt(Rectangle)]
@@ -177,7 +188,7 @@ class View(wx.Panel):
         filt = lambda r: len(r.idtag.strip())
         return [Rectangle for Rectangle in rects if filt(Rectangle)]
 
-    def filter_rects(self, minwidth=20, minheight=20):
+    def filter_rects(self, minwidth=10, minheight=10):
         """Filter any bad rects that are just too tiny"""
         self.rects = View.filter_list(self.rects, minwidth, minheight)
 
@@ -224,6 +235,11 @@ class View(wx.Panel):
         self.Refresh()
 
     def leftdown(self, event):
+        """
+        Leftclick-down event
+        Currently positions are absolute so rectangle width/height can never be negative
+        Unless sorting is implemented this won't be changed
+        """
         # TODO: ensure the mouse positions are in order (otherwise it screws up)
         self.leftclick = True
         pos = event.GetPosition()
@@ -269,7 +285,11 @@ class View(wx.Panel):
         self.Refresh()
 
     def rightdown(self, event):
-        # TODO: Add the ability to select multiple rectangles
+        """
+        Right-click down event
+        Multiple-rectangle selection is now implemented
+        Right-click is also used to pan across the image plane
+        """
         event.Skip()
         pos = event.GetPosition()
         r = self.colliderectpos(pos)
@@ -287,16 +307,17 @@ class View(wx.Panel):
     def rightup(self, event):
         event.Skip()
         self.rightclick = False
-        self.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
+        self.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))  # set cursor back to sys default
         self.init_click = event.GetPosition()
         self.Refresh()
 
     def middown(self, event):
+        """Mid-down event has no use right now"""
         event.Skip()
         self.middleclick = True
 
     def midup(self, event):
-        """Delete a rectangle"""
+        """Delete a the current selected rectangle"""
         event.Skip()
         self.middleclick = False
         if self.selrect is not None:
@@ -306,9 +327,12 @@ class View(wx.Panel):
         """
         The main Drawing function
         All visuals are done here
+        Rect states of drawing: unnamed, named, and currently being added via mouse
+        Preferences.py stores the color preferences for the program
         """
+        # TODO: future feature of zooming in on the image (use of a zoom variable? enhanced bitdrawing?)
         event.Skip()
-        w, h = self.GetClientSize()
+        w, h = self.GetClientSize()  # these two aren't used much right now
         dc = wx.AutoBufferedPaintDC(self)
         dc.Clear()
         # Cause the render to draw unfilled rectangles with borders (may be root of problems)
@@ -323,7 +347,7 @@ class View(wx.Panel):
                 dc.SetPen(wx.Pen(Preferences.displayRectangleBorder, 2, style=wx.DOT_DASH))
                 dc.DrawRectangle(*self.createrect(self.leftclick_topleft, self.leftclick_botright))
             for r in self.rects:
-                if r.idtag.strip() != "":
+                if r.idtag.strip() != "":  # condition for a tag being completely empty
                     dc.SetPen(wx.Pen(Preferences.inactiveRectangleBorder, 1, style=wx.SOLID))
                     dc.DrawRectangle(r.x + self.offsetx, r.y + self.offsety, r.w, r.h)
                 else:

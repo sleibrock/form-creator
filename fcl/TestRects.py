@@ -8,6 +8,12 @@ from itertools import combinations
 import wx
 
 
+"""
+This script was made to test rectangular collision code
+However I could not get the wxPython code off the ground at all (weird)
+It'll remain here but may be deleted in the future once deemed completely unnecessary
+"""
+
 class DataTestApp(wx.Frame):
 
     def __init__(self, parent, title):

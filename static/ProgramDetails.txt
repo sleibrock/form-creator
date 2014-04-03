@@ -1,0 +1,100 @@
+Form Creator
+@author: Steven Leibrock
+@email: leibrockoli@gmail.com
+
+Abstract
+
+Form Creator was made with the intent of wanting to create HTML input field forms quickly over images.
+The original project used Photoshop and tedious amounts of Python hacking in order to do this. It needed to be replaced.
+Initial research began using HTML/CSS to see if there was a faster way. Eventually a new method was found to overlay
+HTML fields over images using absolute positioning in CSS (though this may be looked down upon in the web community).
+
+The premise was using z-index layers and absolute positioning that input fields of text, radios, and checkboxes,
+data can be placed over images fairly easily. Since z-index has no limitations on how many layers can exist on a single
+page, the project began on creating a program to design and lay out forms in a much simpler manner than what was previously
+used.
+
+Theory
+
+On a 2-dimensional plane, we use the Cartesian grid (xy) system to define on an HTML page where exactly certain elements are.
+Thus, all that would be required was data to tell an HTML page where we wanted to place fields. Mostly anything in HTML
+can be defined or contained in a rectangle, and a similar feature existed in Photoshop using Grid Slicing, which
+would be used to cut up an image into multiple slices (this was the old way to do form creation).
+
+What would be required is a program to view an image of some type (BMP, JPEG or PNG), and a way to assert rectangular data to it.
+From this rectangular data, we can set where we want our HTML fields to go exactly on a page. The mapping coordinates of rectangles
+can be stored and accessed very easily, and also serve a dual purpose later on when placement of text is necessary with data
+from a form.
+
+Design
+
+Python 2.7 and wxPython was chosen for this. wxPython has a very nice set of GUI tools that works on multiple platforms with
+very little troubles. Python has by far the most extensible set of tools to be used in any programming situation, in particular
+with the JSON encoding/decoding library tools.
+
+First and foremost the most important feature was the ability to load up an image and be able to scroll around it similar
+to any other image editing tools in existence (once again, Photoshop). A method was quickly discovered to do this within the
+wxPython panel widget, using a different "plane" of operating. One plane would be the plane in which the user creates rectangles
+within the bounds of the wxPython application. The image's plane is a different plane, which stores two variables of offsets.
+The offsets determine where in the wxPython panel the image is exactly. These offsets determine if rectangles will collide
+where our mouse will click and other important details.
+
+The next step was creating a save file format that would store all of this information in one place. So, I created RMAP
+(rectangular mapping data). It isn't anything more than just a glorified JSON format, but stores all rectangle data,
+ranging from (x,y,w,h), nametag, and type of rectangle. I use the extension .RMAP as the recognized file format of the program
+as it's just easier to remember. When you load an image, the program scans for a local RMAP file and will insert rectangles if it's found.
+If nothing is found, when you save, you'll be asked for a filename, and instead it will create a directory with 3 files:
+your original image (a copy of the original, not the original), an HTML page, and the RMAP data.
+
+One feature that was also desired was the ability to take data from forms (when it was loaded from POST let's just say), and
+be able to generate an HTML page with that data instead of fields. Work began on this feature, and it's near completed.
+The one issue that remains with it is the ability to print fields that were checked, it's still an issue but should be
+easy to finish.
+
+Group selection was my last "hurrah" feature that I wanted very badly. A lot of fields can be on the page, and a lot of
+them will have very similar names but numeric offsets. So I created a feature to right-click to add a rectangle
+to a selection, and when renaming all of them at once (via the text field), it would instead append a different number
+to each rectangle instead of giving them all the same name.
+
+The problem with this is that a lot of radio/checkbox fields will often require the same name/ID, so you can't use group
+selection renaming for this issue quickly. However what this does resolve is an issue where you have multiple fields
+with similar names, and instead of copy/pasting with a different number, this does that automatically. For radio/check
+fields it's best just to use use this and go in and individually remove the numbers. On second thought, another feature
+could be added to check the TYPE of the rectangle and then based on that, add numbers or not.
+
+The group selection feature also allows you to mass-change the type of the rectangle as well, so that's probably
+the best thing I could have gotten out of it (because clicking on an additional field multiple times is tedious).
+
+The last process was taking RMAP data and converting it all to HTML format. This was done with a very long, very tedious
+for-loop that did two mass generation cycles of data: one that inserted CSS lines, and one that inserted HTML lines.
+
+Testing was very problematic as all browsers have different optimizations of how data is laid out. When you want to lay
+out a text field at (200,300), the exact field will be placed at something like (210, 305) instead. The problem
+that will always exist in web applications is how different browsers will interpret HTML and how it will render it.
+On my core tests I continue to use Firefox Nightly as it performs the best in memory and has a very nice HTML rendering
+program. Simplistic works the best.
+
+Future
+
+I want to maintain form creator, as I spent a lot of time on it and for me, it was a lot of fun working with wxPython
+and learning the intricacies of a new library. A lot of the times new libraries make you feel like time is wasted, but
+now wxPython is something I want to continue to use in the future.
+
+Possible features that can be added to Form Creator:
+Ability to group-select rename without adding numbers
+Better field-length scaling to fit within smaller confines (most text fields have a very small minsize)
+Better mouse interaction to stop rects from being created after just a simple click
+Toolbar like Photoshop to separate actions instead of having all actions bound to the mouse.
+Possible automatic rectangular detection in images to help with creating rectangles within rectangles on the image.
+A name side-bar so you can see all names used in the program so you don't accidentally overlap.
+A debug RMAP rawtext window you can pop out and see (dev testing mostly I guess)
+Ability to print any radio/checkbox fields that were selected to an HTML print page
+
+Conclusion
+
+With this program I was able to reduce a large amount of workload that would have taken months for any normal person to do
+into a much simpler time frame. It creates HTML in a neat fashion, works with JSON formatting, and is very extensible
+(while not very pretty). It's not very often someone can say that they did something that reduces the amount of time a task
+would require. To make this process fully automatic would be a wonderous thing, but is far from being possible (if possible at all
+within the scope of the project). My intention is to make sure this project can be used by anyone, extended by anyone, and
+used in the future.

@@ -87,11 +87,11 @@ class FormCreator(wx.Frame):
         mb.Append(fmenu, "&File")
         mb.Append(emenu, "&Edit")
 
-        # etc
+        # set menubar to be the main menubar of the frame
         self.SetMenuBar(mb)
-        self.Show(True)
 
-        self.view.SetFocus()
+        # set the frame to be shown on screen (this is important)
+        self.Show(True)
 
         # Bindings
         self.Bind(wx.EVT_MENU, self.on_open, openbutton)
@@ -289,6 +289,7 @@ class FormCreator(wx.Frame):
         self.img = ""
         self.view.clear_all()
         self.rmap_loaded = False
+        self.SetTitle("FormCreator " + Preferences.version)
 
     def on_selection(self, event):
         """Apply the selection from listbox to the rectangle selected (if any)"""
