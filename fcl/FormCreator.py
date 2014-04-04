@@ -1,5 +1,6 @@
 #!/usr/bin/python
 #-*- coding: utf-8 -*-
+from __future__ import with_statement  # ensure that 'with is here to use
 __author__ = 'Steven'
 
 from os.path import join, isfile
@@ -11,6 +12,8 @@ from View import View
 from Preferences import Preferences
 # TODO: make a popup window showing text data of all rects?
 # TODO: fix the issue of the invisible rectangles
+# TODO: correct 'with statement in versions lower than 2.6 (__future__ import?)
+# TODO: ensure that data saving is working correctly
 
 
 class FormCreator(wx.Frame):
